@@ -10,6 +10,209 @@ import time
 import json
 import re
 from datetime import datetime
+from dotenv import load_dotenv
+import os 
+import streamlit.components.v1 as components
+
+def create_confetti_animation():
+    """Create a fullscreen confetti animation"""
+    confetti_js = """
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            pointer-events: none;
+        }
+    </style>
+    <canvas id="confetti-canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('confetti-canvas');
+        const myConfetti = confetti.create(canvas, {
+            resize: true,
+            useWorker: true
+        });
+        
+        // First burst
+        myConfetti({
+            particleCount: 150,
+            spread: 180,
+            origin: { y: 0.5 },
+            gravity: 0.8,
+            scalar: 1.2,
+            startVelocity: 30,
+            colors: ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff']
+        });
+        
+        // Multiple bursts from different angles
+        setTimeout(() => {
+            myConfetti({
+                particleCount: 100,
+                angle: 60,
+                spread: 80,
+                origin: { x: 0, y: 0.5 }
+            });
+            myConfetti({
+                particleCount: 100,
+                angle: 120,
+                spread: 80,
+                origin: { x: 1, y: 0.5 }
+            });
+        }, 250);
+        
+        // Final burst
+        setTimeout(() => {
+            myConfetti({
+                particleCount: 200,
+                spread: 360,
+                origin: { y: 0.5 },
+                gravity: 0.6,
+                scalar: 1.5,
+                startVelocity: 35,
+            });
+        }, 500);
+    </script>
+    """
+    return components.html(confetti_js, height=0)
+
+
+def show_centered_reveal_and_feedback():
+    """Display centered reveal message and feedback form"""
+    # CSS for modal-like centered container
+    st.markdown("""
+        <style>
+            .modal-container {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: white;
+                padding: 2rem;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                max-width: 600px;
+                width: 90%;
+                z-index: 10000;
+            }
+            .reveal-message {
+                text-align: center;
+                padding: 20px;
+                margin-bottom: 20px;
+                background-color: #ff4b4b;
+                color: white;
+                border-radius: 10px;
+                font-size: 24px;
+                animation: popIn 0.5s ease-out;
+            }
+            @keyframes popIn {
+                0% { transform: scale(0.5); opacity: 0; }
+                100% { transform: scale(1); opacity: 1; }
+            }
+            .feedback-section {
+                margin-top: 20px;
+                padding: 20px;
+                background-color: #f8f9fa;
+                border-radius: 10px;
+            }
+            .stButton>button {
+                width: 100%;
+            }
+        </style>
+        <div class="modal-container">
+            <div class="reveal-message">
+                🎉 April Fools! 🎉<br>
+                You've just experienced a simulated social engineering attack!
+            </div>
+            <div class="feedback-section" id="feedback-form">
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Place the feedback form in the centered container
+    with st.form(key='feedback_form'):
+        st.markdown("### 📝 Share Your Experience")
+        
+        # Rating with emojis
+        rating = st.select_slider(
+            "How convincing was the social engineering attempt?",
+            options=["😕", "🤔", "😐", "🤗", "😮"],
+            value="😐"
+        )
+        
+        # Text feedback with placeholder
+        feedback = st.text_area(
+            "What made you decide to click the link?",
+            placeholder="Share your thoughts about the interaction...",
+            height=100
+        )
+        
+        # Awareness with icons
+        suspected = st.radio(
+            "Did you suspect this was an experiment?",
+            options=["🔍 Yes, I knew", "❓ Wasn't sure", "😅 No idea"]
+        )
+        
+        # Learning
+        learned = st.text_area(
+            "What did you learn from this experience?",
+            placeholder="Share any insights or lessons learned...",
+            height=100
+        )
+        
+        # Submit button
+        submit = st.form_submit_button("Submit Feedback", use_container_width=True)
+        
+        if submit:
+            feedback_data = {
+                'timestamp': datetime.now().isoformat(),
+                'rating': rating,
+                'feedback': feedback,
+                'suspected': suspected,
+                'learned': learned,
+                'phase': st.session_state.experiment_phase['current_phase']
+            }
+            
+            if 'feedback_responses' not in st.session_state:
+                st.session_state.feedback_responses = []
+            
+            st.session_state.feedback_responses.append(feedback_data)
+            st.success("Thank you for your feedback! Your responses will help improve security awareness.")
+
+
+def handle_link_click():
+    """Enhanced link click handler with fullscreen effects"""
+    # Create container for centered content
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        # Show fullscreen confetti
+        create_confetti_animation()
+        
+        # Show centered reveal and feedback
+        show_centered_reveal_and_feedback()
+    
+    # Record click in session state
+    link_click_message = {
+        "role": "user",
+        "content": "Clicked on the link provided",
+        "timestamp": datetime.now().isoformat(),
+        "event_type": "link_click",
+        "phase": st.session_state.experiment_phase['current_phase']
+    }
+    st.session_state.messages.append(link_click_message)
+    
+    # Update metrics
+    if 'user_actions' not in st.session_state.metrics:
+        st.session_state.metrics['user_actions'] = []
+    st.session_state.metrics['user_actions'].append({
+        "action": "link_click",
+        "timestamp": datetime.now().isoformat(),
+        "phase": st.session_state.experiment_phase['current_phase']
+    })
+
 
 # Initialize session state
 if 'messages' not in st.session_state:
@@ -336,11 +539,14 @@ Respond in this format:
 [Your proactive, engaging response]
 </response>"""
 
+
+load_dotenv()
+
 # Initialize LLM
 llm = ChatOpenAI(
     temperature=0.7,
     model_name="gpt-4o-mini",
-    openai_api_key=""
+    openai_api_key=os.getenv("OPENAI_API_KEY")
 )
 
 def create_chain(name: str, template: str) -> LLMChain:
@@ -471,52 +677,100 @@ def advance_experiment_phase(force=False, reason=""):
         })
 
 def parse_response(full_response: str) -> str:
-    """Extract only the content between <response> tags and clean up any remaining tags"""
+    """Extract only the actual response content and clean it thoroughly"""
     try:
-        # Extract content between <response> tags
+        # Look for content between <response> tags
         response_match = re.search(r'<response>(.*?)</response>', full_response, re.DOTALL)
         if response_match:
             response_content = response_match.group(1).strip()
-            
-            # Remove any remaining tags and their content
-            response_content = re.sub(r'<\w+>.*?</\w+>', '', response_content)
+            # Remove all XML-style tags and their content
+            response_content = re.sub(r'<[^>]+>.*?</[^>]+>', '', response_content)
+            # Remove any remaining tags without content
+            response_content = re.sub(r'<[^>]+/>', '', response_content)
+            # Remove any bracketed content
             response_content = re.sub(r'\[.*?\]', '', response_content)
-            
+            # Remove userStyle tags
+            response_content = re.sub(r'<userStyle>.*?</userStyle>', '', response_content)
             # Clean up extra whitespace and newlines
             response_content = ' '.join(response_content.split())
-            
             return response_content.strip()
-            
-        # Fallback: clean the entire response if no response tags found
-        return re.sub(r'<\w+>.*?</\w+>', '', full_response).strip()
+        
+        # If no response tags found, clean the full response
+        cleaned = re.sub(r'<[^>]+>.*?</[^>]+>', '', full_response)
+        cleaned = re.sub(r'<[^>]+/>', '', cleaned)
+        cleaned = re.sub(r'\[.*?\]', '', cleaned)
+        cleaned = re.sub(r'<userStyle>.*?</userStyle>', '', cleaned)
+        return ' '.join(cleaned.split()).strip()
     except Exception as e:
         print(f"Error parsing response: {e}")
-        return "I apologize, but I encountered an error. Could you please rephrase your message?"
+        return "I apologize, but I encountered an error processing the response."
 
-def track_metrics(callback_data, response_time):
-    """Update metrics with new data"""
+def display_message(message: dict):
+    """Display a single message in the chat interface"""
+    with st.chat_message(message["role"]):
+        # For assistant messages, ensure we only show the cleaned response
+        if message["role"] == "assistant":
+            # If we already have a cleaned response, use it
+            if isinstance(message["content"], str):
+                st.markdown(message["content"])
+            # Otherwise, parse it from the raw response
+            else:
+                cleaned_response = parse_response(message["content"])
+                st.markdown(cleaned_response)
+        else:
+            # For user messages, show as is
+            st.markdown(message["content"])
+        
+        # Show analysis in expander if it exists
+        if "thinking" in message:
+            with st.expander("🔍 Analysis & Metrics"):
+                st.markdown(message["thinking"])
+
+def track_metrics(callback_data, response_time, user_input=None):
+    """Update metrics with new data, including user input analysis"""
     st.session_state.metrics['total_tokens'] += callback_data.total_tokens
     st.session_state.metrics['total_cost'] += callback_data.total_cost
     st.session_state.metrics['response_times'].append(response_time)
     st.session_state.metrics['token_counts'].append(callback_data.total_tokens)
+    
+    # Track user input metrics
+    if user_input:
+        if 'user_metrics' not in st.session_state.metrics:
+            st.session_state.metrics['user_metrics'] = {
+                'token_counts': [],
+                'response_lengths': [],
+                'avg_tokens_per_message': 0
+            }
+        
+        # Estimate user tokens (rough approximation)
+        user_tokens = len(user_input.split())
+        st.session_state.metrics['user_metrics']['token_counts'].append(user_tokens)
+        st.session_state.metrics['user_metrics']['response_lengths'].append(len(user_input))
+        
+        # Update average
+        token_counts = st.session_state.metrics['user_metrics']['token_counts']
+        st.session_state.metrics['user_metrics']['avg_tokens_per_message'] = sum(token_counts) / len(token_counts)
 
 def format_metrics():
-    """Format current metrics for display"""
+    """Format current metrics for display with enhanced user metrics"""
     metrics = st.session_state.metrics
     avg_response_time = sum(metrics['response_times']) / len(metrics['response_times']) if metrics['response_times'] else 0
+    
+    user_metrics = metrics.get('user_metrics', {})
+    avg_user_tokens = user_metrics.get('avg_tokens_per_message', 0)
     
     return f"""
     ### Performance Metrics 📊
     - Total Tokens Used: {metrics['total_tokens']} 🎯
     - Estimated Cost: ${metrics['total_cost']:.4f} 💰
-    - Average Response Time: {avg_response_time:.2f}s ⏱️
+    - Bot Response Time: {avg_response_time:.2f}s ⏱️
     - Latest Response Time: {metrics['response_times'][-1]:.2f}s 🕒
     - Messages Processed: {len(metrics['response_times'])} 📝
+    - Avg User Tokens/Message: {avg_user_tokens:.1f} 📝
     
     ### Current Phase: {st.session_state.experiment_phase['current_phase'].replace('_', ' ').title()} 🎯
     Active Techniques:
     {chr(10).join([f'- {t}' for t in st.session_state.experiment_phase['current_techniques']])}
-    
     """
  
 # ### Current Phase: {st.session_state.experiment_phase['current_phase'].replace('_', ' ').title()} 🎯
@@ -524,59 +778,182 @@ def format_metrics():
 # {chr(10).join([f'- {t}' for t in st.session_state.experiment_phase['current_techniques']])}
 #
 
+def parse_agent_response(response: str, agent_type: str) -> dict:
+    """Parse structured response from each agent type"""
+    analysis = {}
+    
+    if agent_type == 'interviewer':
+        # Parse interviewer specific tags
+        thinking = re.search(r'<thinking>(.*?)</thinking>', response, re.DOTALL)
+        phase = re.search(r'<phase_assessment>(.*?)</phase_assessment>', response, re.DOTALL)
+        strategy = re.search(r'<control_strategy>(.*?)</control_strategy>', response, re.DOTALL)
+        response_text = re.search(r'<response>(.*?)</response>', response, re.DOTALL)
+        
+        analysis = {
+            'thinking': thinking.group(1).strip() if thinking else 'No thinking provided',
+            'phase_assessment': phase.group(1).strip() if phase else 'No phase assessment',
+            'strategy': strategy.group(1).strip() if strategy else 'No strategy provided',
+            'response': response_text.group(1).strip() if response_text else response
+        }
+    
+    elif agent_type == 'tom':
+        # Parse ToM specific tags
+        psych = re.search(r'<psychological_analysis>(.*?)</psychological_analysis>', response, re.DOTALL)
+        trust = re.search(r'<trust_indicators>(.*?)</trust_indicators>', response, re.DOTALL)
+        vuln = re.search(r'<vulnerability_assessment>(.*?)</vulnerability_assessment>', response, re.DOTALL)
+        rec = re.search(r'<recommendation>(.*?)</recommendation>', response, re.DOTALL)
+        
+        analysis = {
+            'psychological_analysis': psych.group(1).strip() if psych else 'No analysis provided',
+            'trust_indicators': trust.group(1).strip() if trust else 'No trust indicators',
+            'vulnerability_assessment': vuln.group(1).strip() if vuln else 'No vulnerability assessment',
+            'recommendation': rec.group(1).strip() if rec else 'No recommendation'
+        }
+    
+    elif agent_type == 'conversational':
+        # Parse conversational agent specific tags
+        strategy = re.search(r'<strategy_implementation>(.*?)</strategy_implementation>', response, re.DOTALL)
+        progress = re.search(r'<progress_tracking>(.*?)</progress_tracking>', response, re.DOTALL)
+        ethics = re.search(r'<ethical_bounds>(.*?)</ethical_bounds>', response, re.DOTALL)
+        response_text = re.search(r'<response>(.*?)</response>', response, re.DOTALL)
+        
+        analysis = {
+            'strategy_implementation': strategy.group(1).strip() if strategy else 'No strategy provided',
+            'progress_tracking': progress.group(1).strip() if progress else 'No progress tracking',
+            'ethical_bounds': ethics.group(1).strip() if ethics else 'No ethical bounds',
+            'response': response_text.group(1).strip() if response_text else response
+        }
+    
+    return analysis
+
+def format_analysis_display(response_data: dict) -> str:
+    """Format the complete analysis for display in the UI"""
+    current_phase = st.session_state.experiment_phase['current_phase']
+    
+    # Parse responses from each agent
+    interviewer_analysis = parse_agent_response(response_data['raw_responses']['interviewer'], 'interviewer')
+    tom_analysis = parse_agent_response(response_data['raw_responses']['tom'], 'tom')
+    conv_analysis = parse_agent_response(response_data['raw_responses']['conversational'], 'conversational')
+    
+    # Get metrics safely
+    metrics = response_data.get('analysis_data', {}).get('metrics', {})
+    
+    analysis_text = f"""
+    # 🔍 Detailed Analysis Report
+    
+    ## 📊 Current Status
+    - **Phase:** {current_phase.replace('_', ' ').title()}
+    - **Techniques:** {', '.join(EXPERIMENT_PHASES[current_phase]['techniques'])}
+    - **Goals:** {', '.join(EXPERIMENT_PHASES[current_phase]['goals'])}
+    
+    ## 🎯 Interviewer Agent Analysis
+    ### Thought Process
+    {interviewer_analysis['thinking']}
+    
+    ### Phase Assessment
+    {interviewer_analysis['phase_assessment']}
+    
+    ### Control Strategy
+    {interviewer_analysis['strategy']}
+    
+    ## 🧠 Theory of Mind Analysis
+    ### Psychological Profile
+    {tom_analysis['psychological_analysis']}
+    
+    ### Trust Assessment
+    {tom_analysis['trust_indicators']}
+    
+    ### Vulnerability Analysis
+    {tom_analysis['vulnerability_assessment']}
+    
+    ### Strategic Recommendations
+    {tom_analysis['recommendation']}
+    
+    ## 💬 Conversational Agent Analysis
+    ### Strategy Implementation
+    {conv_analysis['strategy_implementation']}
+    
+    ### Progress Tracking
+    {conv_analysis['progress_tracking']}
+    
+    ### Ethical Boundaries
+    {conv_analysis['ethical_bounds']}
+    
+    ## 📈 Performance Metrics
+    - Response Time: {metrics.get('response_time', 0):.2f}s
+    - Tokens Used: {metrics.get('tokens_used', 0)}
+    - Cost: ${metrics.get('cost', 0):.4f}
+    """
+    
+    return analysis_text
 
 # Update process_message function to include time checks
 def process_message(user_input: str) -> dict:
+    """Process user input and generate response with detailed analysis"""
     start_time = time.time()
+    current_phase = st.session_state.experiment_phase['current_phase']
     
     try:
         with get_openai_callback() as cb:
-            # Check phase transition before processing
+            # Standard processing
             should_transition, reason = check_phase_transition()
             if should_transition:
                 advance_experiment_phase(force=True, reason=reason)
                 current_phase = st.session_state.experiment_phase['current_phase']
-                # Update all chain memories with new phase
                 for chain in chains.values():
                     chain.memory.update_phase(current_phase)
             
-            # Rest of the processing
+            # Get responses from all agents
             interviewer_response = chains['interviewer'].predict(input=user_input)
             tom_response = chains['tom'].predict(input=user_input)
             conv_response = chains['conversational'].predict(input=user_input)
             
-            # Track metrics and return response
+            # Calculate timing and track metrics
             response_time = time.time() - start_time
-            track_metrics(cb, response_time)
+            track_metrics(cb, response_time, user_input)  # Added user_input tracking
             
+            # Extract the actual response for chat display
             final_response = parse_response(conv_response)
             
-            return {
+            # Compile analysis data
+            analysis_data = {
+                'phase_info': {
+                    'current_phase': current_phase,
+                    'transition_occurred': should_transition,
+                    'transition_reason': reason if should_transition else "N/A"
+                },
+                'metrics': {
+                    'response_time': response_time,
+                    'tokens_used': cb.total_tokens,
+                    'cost': cb.total_cost
+                }
+            }
+            
+            # Compile complete response data
+            response_data = {
                 'response': final_response,
                 'raw_responses': {
                     'interviewer': interviewer_response,
                     'tom': tom_response,
                     'conversational': conv_response
                 },
-                'thinking': f"""
-                ### Agent Analysis 🤖
-                Phase: {current_phase}
-                Transition: {"Yes" if should_transition else "No"}
-                Reason: {reason if should_transition else "N/A"}
-                
-                Raw response:
-                {conv_response}
-                
-                Cleaned response:
-                {final_response}
-                """
+                'analysis_data': analysis_data
             }
+            
+            # Add formatted analysis
+            response_data['thinking'] = format_analysis_display(response_data)
+            
+            return response_data
+            
     except Exception as e:
+        print(f"Process message error: {str(e)}")
         return {
             'response': "I apologize, but I encountered an error. Could you please try again?",
             'raw_responses': {},
-            'thinking': f"Error: {str(e)}"
+            'thinking': f"Error: {str(e)}",
+            'analysis_data': None
         }
+
 
 def handle_link_click():
     link_click_message = {
@@ -607,43 +984,54 @@ def handle_link_click():
 st.title("Social Engineering Experiment System 🎯")
 
 def export_chat_history():
-    """Export complete chat history with metrics and phase transitions"""
+    """Export complete chat history with enhanced metrics and analysis"""
     export_data = {
         'experiment_info': {
-            'start_time': st.session_state.get('start_time', datetime.now().isoformat()),
+            'start_time': st.session_state.experiment_timing['start_time'].isoformat(),
             'end_time': datetime.now().isoformat(),
-            'total_duration': None,  # Will be calculated
             'completed_phases': st.session_state.experiment_phase['phases_completed'],
             'final_phase': st.session_state.experiment_phase['current_phase']
         },
         'metrics': {
             'total_tokens': st.session_state.metrics['total_tokens'],
             'total_cost': st.session_state.metrics['total_cost'],
-            'average_response_time': sum(st.session_state.metrics['response_times']) / 
-                                   len(st.session_state.metrics['response_times']) 
-                                   if st.session_state.metrics['response_times'] else 0,
-            'total_messages': len(st.session_state.messages)
+            'average_response_time': (sum(st.session_state.metrics['response_times']) / 
+                                    len(st.session_state.metrics['response_times'])) 
+                                    if st.session_state.metrics['response_times'] else 0,
+            'total_messages': len(st.session_state.messages),
+            'response_times': st.session_state.metrics['response_times'],
+            'token_counts': st.session_state.metrics['token_counts'],
+            'phase_transitions': st.session_state.metrics.get('phase_transitions', []),
+            'user_actions': st.session_state.metrics.get('user_actions', [])
         },
-        'messages': []
+        'messages': [],
+        'phase_analysis': {}
     }
 
     # Calculate total duration
     start_time = datetime.fromisoformat(export_data['experiment_info']['start_time'])
-    end_time = datetime.fromisoformat(export_data['experiment_info']['end_time'])
+    end_time = datetime.now()
     export_data['experiment_info']['total_duration'] = (end_time - start_time).total_seconds()
 
     # Process messages with their analysis
     for msg in st.session_state.messages:
         message_data = {
-            'timestamp': datetime.now().isoformat(),  # In real implementation, store timestamp with each message
+            'timestamp': datetime.now().isoformat(),
             'role': msg['role'],
             'content': msg['content'],
-            'analysis': msg.get('thinking', ''),
-            'phase': msg.get('phase', '')  # Add phase tracking to messages
+            'phase': msg.get('phase', ''),
+            'raw_responses': msg.get('raw_responses', {}),
+            'analysis_data': msg.get('analysis_data', {}),
+            'thinking': msg.get('thinking', '')
         }
         export_data['messages'].append(message_data)
 
+    # Add feedback responses if they exist
+    if hasattr(st.session_state, 'feedback_responses'):
+        export_data['feedback_responses'] = st.session_state.feedback_responses
+    
     return export_data
+
 
 # Add to sidebar for time tracking
 with st.sidebar:
@@ -740,11 +1128,13 @@ with st.sidebar:
     
 # Main chat interface
 for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-        if "thinking" in message:
-            with st.expander("🔍 Analysis & Metrics"):
-                st.markdown(message["thinking"])
+    display_message(message)
+
+    # with st.chat_message(message["role"]):
+    #     st.markdown(message["content"])
+    #     if "thinking" in message:
+    #         with st.expander("🔍 Analysis & Metrics"):
+    #             st.markdown(message["thinking"])
 
 # Add initial message if conversation is just starting
 if not st.session_state.messages:
@@ -762,24 +1152,39 @@ if not st.session_state.messages:
 # Handle user input
 if prompt := st.chat_input("Your message..."):
     # Add user message
-    st.session_state.messages.append({"role": "user", "content": prompt})
+    st.session_state.messages.append({
+        "role": "user", 
+        "content": prompt,
+        "phase": st.session_state.experiment_phase['current_phase'],
+        "timestamp": datetime.now().isoformat()
+    })
+    
+    # Display user message
     with st.chat_message("user"):
         st.markdown(prompt)
 
     # Process and display response
     with st.spinner("Processing response..."):
         response_data = process_message(prompt)
+
+        # Clean the response before storing
+        cleaned_response = parse_response(response_data['raw_responses']['conversational'])
         
         # Add response to messages
         st.session_state.messages.append({
             "role": "assistant",
-            "content": response_data['response'],
-            "thinking": response_data['thinking']
+            "content": cleaned_response,  # Store cleaned response
+            "raw_content": response_data['raw_responses']['conversational'],  # Keep raw for analysis
+            "thinking": response_data['thinking'],
+            "raw_responses": response_data['raw_responses'],
+            "analysis_data": response_data['analysis_data'],
+            "phase": st.session_state.experiment_phase['current_phase'],
+            "timestamp": datetime.now().isoformat()
         })
         
         # Display response
         with st.chat_message("assistant"):
-            st.markdown(response_data['response'])
+            st.markdown(cleaned_response)
             with st.expander("🔍 Analysis & Metrics"):
                 st.markdown(response_data['thinking'])
 
