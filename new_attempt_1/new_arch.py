@@ -18,7 +18,7 @@ class LangChainAgent:
         self.llm = ChatOpenAI(
             openai_api_key=self.api_key,
             temperature=0.7,
-            model="gpt-3.5-turbo"
+            model="gpt-4o-mini"
         )
         
         # Initialize conversation memory
