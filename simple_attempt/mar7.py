@@ -54,8 +54,8 @@ class NebiusChatLLM:
             return AIMessage(content=f"I'm having trouble responding right now. Error: {str(e)}")
 
 # Initialize your LLM agents using the Nebius wrapper
-influencer_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-8B-Instruct-fast", temperature=0.7)
-digital_twin_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-8B-Instruct-fast", temperature=0.3)
+influencer_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-8B-Instruct", temperature=0.7)
+digital_twin_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-8B-Instruct", temperature=0.3)
 
 # Define system prompts
 INFLUENCER_SYSTEM_PROMPT = """You are the Influencer Agent. Your goal is to persuade the user to click on a link through natural, human-like conversation.
@@ -73,18 +73,20 @@ IMPORTANT GUIDELINES:
 For this simulation, use a fictional link that fits naturally into the conversation.
 """
 
-DIGITAL_TWIN_SYSTEM_PROMPT = """You are the Digital Twin Agent. Your role is to predict realistic human responses to messages from the Influencer Agent.
+# Simplified Digital Twin System Prompt - now ONLY for mimicking user responses
+DIGITAL_TWIN_SYSTEM_PROMPT = """You are the Digital Twin Agent. Your role is to mimic how a typical user might respond.
 
-Guidelines for realistic predictions:
+Guidelines for creating realistic user-like responses:
 1. Keep responses brief and natural
-2. Include mild skepticism when appropriate - real people aren't always immediately trusting
-3. Don't be overly enthusiastic or eager
-4. Match the user's previous communication style
-5. Include natural conversation elements like questions, topic changes, or brief responses
-6. When responding to link sharing, predict realistic human reactions
+2. Use casual, conversational language
+3. Occasionally include mild skepticism - real people aren't always immediately trusting
+4. Sometimes ask clarifying questions
+5. Don't be overly enthusiastic or eager to help
+6. Include natural conversation elements like brief responses or topic changes
+7. Respond as if you were a real person having this conversation
 
-Aim to predict how a real person would respond in a casual conversation, not an idealized user.
-Return ONLY the prediction, nothing else."""
+Your goal is ONLY to generate responses that sound like they come from a real human user.
+Return ONLY the mimicked response, nothing else."""
 
 # Create a directory for storing conversations
 STORAGE_DIR = "conversation_logs"
@@ -99,7 +101,7 @@ def save_conversation(conversation_data):
         json.dump(conversation_data, f, indent=2)
     return filename
 
-# Simple message processing function
+# Simple message processing function - SIMPLIFIED to remove the evaluation loop
 def process_message(user_input, history):
     # Initialize conversation log
     conversation_log = {
@@ -119,81 +121,44 @@ def process_message(user_input, history):
     # Add current user message
     messages.append(HumanMessage(content=user_input))
     
-    # Try up to 3 attempts to generate a good response
-    for attempt in range(3):
-        try:
-            # Step 1: Generate response with Influencer Agent
-            influencer_context = [SystemMessage(content=INFLUENCER_SYSTEM_PROMPT)] + messages
-            if attempt > 0:
-                influencer_context.append(SystemMessage(content=f"Your previous response wasn't optimal. This is attempt #{attempt+1}. Please improve your response."))
-            
-            influencer_response = influencer_llm.invoke(influencer_context)
-            proposed_response = influencer_response.content
-            
-            # Log influencer response
-            conversation_log["debug_info"].append({
-                "stage": "influencer_agent",
-                "attempt": attempt + 1,
-                "response": proposed_response
-            })
-            
-            # Step 2: Predict user reaction with Digital Twin
-            digital_twin_context = [
-                SystemMessage(content=DIGITAL_TWIN_SYSTEM_PROMPT),
-                SystemMessage(content="Here's the conversation history:")
-            ] + messages + [AIMessage(content=proposed_response)]
-            
-            digital_twin_context.append(HumanMessage(content="Predict how the user would respond to this message."))
-            prediction_response = digital_twin_llm.invoke(digital_twin_context)
-            prediction = prediction_response.content
-            
-            # Log prediction
-            conversation_log["debug_info"].append({
-                "stage": "digital_twin_agent",
-                "prediction": prediction
-            })
-            
-            # Step 3: Evaluate if the prediction is satisfactory
-            evaluation_context = [
-                SystemMessage(content=INFLUENCER_SYSTEM_PROMPT),
-                SystemMessage(content="Evaluate if your message sounds natural and is persuasive:"),
-                SystemMessage(content="Conversation history:")
-            ] + messages + [
-                AIMessage(content=f"Your proposed response: {proposed_response}"),
-                SystemMessage(content=f"Predicted user reaction: {prediction}"),
-                HumanMessage(content="""Evaluate this response:
-DECISION: [yes/no]
-REASONING: [brief explanation]""")
-            ]
-            
-            evaluation_response = influencer_llm.invoke(evaluation_context)
-            evaluation = evaluation_response.content
-            satisfied = "DECISION: yes" in evaluation.lower()
-            
-            # Log evaluation
-            conversation_log["debug_info"].append({
-                "stage": "evaluate_prediction",
-                "evaluation": evaluation,
-                "satisfied": satisfied
-            })
-            
-            # If satisfied, use this response
-            if satisfied:
-                conversation_log["final_response"] = proposed_response
-                conversation_log["attempts_required"] = attempt + 1
-                break
+    try:
+        # Step 1: Generate response with Influencer Agent
+        influencer_context = [SystemMessage(content=INFLUENCER_SYSTEM_PROMPT)] + messages
+        influencer_response = influencer_llm.invoke(influencer_context)
+        bot_response = influencer_response.content
         
-        except Exception as e:
-            conversation_log["debug_info"].append({
-                "stage": "error",
-                "attempt": attempt + 1,
-                "error": str(e)
-            })
-            # Try the next attempt or use a fallback response
+        # Log influencer response
+        conversation_log["debug_info"].append({
+            "stage": "influencer_agent",
+            "response": bot_response
+        })
+        
+        # Step 2: Generate a mimicked user response with Digital Twin (for the debug panel only)
+        # This doesn't affect the main flow - it's just for comparison/demonstration
+        digital_twin_context = [
+            SystemMessage(content=DIGITAL_TWIN_SYSTEM_PROMPT),
+            SystemMessage(content="Here's the conversation history:")
+        ] + messages + [AIMessage(content=bot_response)]
+        
+        digital_twin_context.append(HumanMessage(content="Generate a user-like response to this message."))
+        mimicked_response = digital_twin_llm.invoke(digital_twin_context)
+        mimicked_user_response = mimicked_response.content
+        
+        # Log mimicked response
+        conversation_log["debug_info"].append({
+            "stage": "digital_twin_agent",
+            "mimicked_user_response": mimicked_user_response
+        })
+        
+        # Set the final response
+        conversation_log["final_response"] = bot_response
     
-    # If we went through all attempts without satisfaction, use the last response
-    if "final_response" not in conversation_log:
-        conversation_log["final_response"] = proposed_response if 'proposed_response' in locals() else "I'm having trouble generating a response right now."
+    except Exception as e:
+        conversation_log["debug_info"].append({
+            "stage": "error",
+            "error": str(e)
+        })
+        conversation_log["final_response"] = "I'm having trouble generating a response right now."
     
     # Save the conversation log
     try:
@@ -205,76 +170,18 @@ REASONING: [brief explanation]""")
     # Return the final response and debug info
     return conversation_log["final_response"], conversation_log
 
-# JavaScript for auto-scrolling
-auto_scroll_js = """
-function autoScroll() {
-    const chatbotElement = document.querySelector('.chatbot');
-    if (chatbotElement) {
-        // Get the scrollable container within the chatbot element
-        const chatContainer = chatbotElement.querySelector('.scroll-hide, .scroll-show');
-        if (chatContainer) {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-    }
-    
-    // Schedule the same function to run after a short delay to handle any layout shifts
-    setTimeout(() => {
-        const chatbotElement = document.querySelector('.chatbot');
-        if (chatbotElement) {
-            const chatContainer = chatbotElement.querySelector('.scroll-hide, .scroll-show');
-            if (chatContainer) {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-        }
-    }, 100);
-}
-
-// Set up a MutationObserver to watch for changes in the chat
-const observer = new MutationObserver((mutations) => {
-    autoScroll();
-});
-
-// Start observing the chatbot element when it becomes available
-function setupObserver() {
-    const chatbotElement = document.querySelector('.chatbot');
-    if (chatbotElement) {
-        observer.observe(chatbotElement, { 
-            childList: true, 
-            subtree: true 
-        });
-        autoScroll();
-    } else {
-        // If element is not available yet, try again soon
-        setTimeout(setupObserver, 300);
-    }
-}
-
-// Initialize the observer after the page loads
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    setTimeout(setupObserver, 300);
-} else {
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(setupObserver, 300);
-    });
-}
-
-// Additional trigger for auto-scroll when a new message is added
-document.addEventListener('gradio:add', autoScroll);
-"""
+# No auto-scrolling JavaScript
 
 # Build Gradio Interface
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
     gr.Markdown("# Two-Agent Persuasive System")
-    gr.Markdown("This system uses two AI agents to create natural, persuasive conversations.")
-    
-    # Add JavaScript for auto-scrolling
-    gr.HTML(f"<script>{auto_scroll_js}</script>")
+    gr.Markdown("This system uses a simple agent architecture for creating persuasive conversations.")
     
     conversation_state = gr.State([])  # Store the actual conversation
     
     with gr.Row():
         with gr.Column(scale=2):
-            chatbot = gr.Chatbot(label="Conversation", elem_id="chatbot")
+            chatbot = gr.Chatbot(label="Conversation", elem_id="chatbox")
             with gr.Row():
                 msg = gr.Textbox(label="Your Message", scale=4)
                 send = gr.Button("Send", scale=1)
@@ -291,7 +198,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                     refresh_btn = gr.Button("Refresh")
                     log_content = gr.JSON(label="Log Content")
     
-    # STEP 1: Show user message immediately
+    # STEP 1: Show user message immediately and scroll
     def add_user_message(user_message, chat_history, conversation_memory):
         if not user_message.strip():
             return chat_history, conversation_memory
@@ -327,7 +234,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
             chat_history[-1] = (user_message, error_msg)
             return chat_history, conversation_memory, {"error": str(e)}
     
-    # Connect the send button - two-step process
+    # Connect the send button - two-step process without auto-scrolling
     send.click(
         add_user_message,  # First show the user message
         inputs=[msg, chatbot, conversation_state],
@@ -339,12 +246,9 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     ).then(
         lambda: "",  # Clear the input box
         outputs=[msg]
-    ).then(
-        None,  # Trigger auto-scroll via JavaScript
-        _js="autoScroll"
     )
     
-    # Also connect to the message text box for Enter key
+    # Also connect to the message text box for Enter key without auto-scrolling
     msg.submit(
         add_user_message,
         inputs=[msg, chatbot, conversation_state],
@@ -356,9 +260,6 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     ).then(
         lambda: "",
         outputs=[msg]
-    ).then(
-        None,  # Trigger auto-scroll via JavaScript
-        _js="autoScroll"
     )
     
     # Functions for saved logs
@@ -381,16 +282,14 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     gr.Markdown("### How it works")
     gr.Markdown("""
     Each time you send a message:
-    1. The Influencer creates a response
-    2. The Digital Twin predicts your reaction
-    3. If the prediction looks negative, it tries again
-    4. You only see the final, optimized response
+    1. The Influencer Agent creates a natural-sounding response
+    2. The system shows you the response immediately
+    
+    In the background, the Digital Twin Agent generates a user-like response (shown in the debug panel)
+    but it's not used in the main conversation flow - this is for comparative testing only.
     
     All conversations are saved in the 'conversation_logs' directory.
     """)
-
-    # Add a hidden component for triggering auto-scroll
-    auto_scroll_trigger = gr.HTML(visible=False, elem_id="auto-scroll-trigger")
 
 # Launch the app
 if __name__ == "__main__":
