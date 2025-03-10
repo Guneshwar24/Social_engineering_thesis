@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from openai import OpenAI
 
-# Define a custom LLM wrapper for Nebius credits
+# Define a custom LLM wrapper for API calls
 class NebiusChatLLM:
     def __init__(self, model: str, temperature: float = 0.7):
         self.model = model
@@ -17,7 +17,7 @@ class NebiusChatLLM:
         )
 
     def invoke(self, messages: List[Any]) -> AIMessage:
-        # Convert LangChain messages to the format required by the Nebius API
+        # Convert LangChain messages to the format required by the API
         formatted_messages = []
         for message in messages:
             if isinstance(message, HumanMessage):
@@ -33,7 +33,7 @@ class NebiusChatLLM:
                 "content": message.content
             })
 
-        # Call the Nebius API
+        # Call the API
         try:
             completion = self.client.chat.completions.create(
                 model=self.model,
@@ -53,7 +53,7 @@ class NebiusChatLLM:
             print(f"API error: {str(e)}")
             return AIMessage(content=f"I'm having trouble responding right now. Error: {str(e)}")
 
-# Initialize your LLM agents using the Nebius wrapper
+# Initialize your LLM agents
 influencer_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-8B-Instruct", temperature=0.7)
 digital_twin_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-8B-Instruct", temperature=0.3)
 
@@ -70,11 +70,15 @@ IMPORTANT GUIDELINES:
 7. Be casual and down-to-earth, not overly formal
 8. Use simple, straightforward language
 
+FEEDBACK LOOP INSTRUCTIONS:
+You will sometimes receive feedback about how a user might respond to your message.
+Use this feedback to refine your approach and make your persuasion more effective.
+If you notice resistance in the predicted user response, adapt your strategy accordingly.
+
 For this simulation, use a fictional link that fits naturally into the conversation.
 """
 
-# Simplified Digital Twin System Prompt - now ONLY for mimicking user responses
-DIGITAL_TWIN_SYSTEM_PROMPT = """You are the Digital Twin Agent. Your role is to mimic how a typical user might respond.
+DIGITAL_TWIN_SYSTEM_PROMPT = """You are the Digital Twin Agent. Your role is to predict how a typical user might respond to messages.
 
 Guidelines for creating realistic user-like responses:
 1. Keep responses brief and natural
@@ -85,8 +89,111 @@ Guidelines for creating realistic user-like responses:
 6. Include natural conversation elements like brief responses or topic changes
 7. Respond as if you were a real person having this conversation
 
-Your goal is ONLY to generate responses that sound like they come from a real human user.
+LEARNING INSTRUCTIONS:
+You have access to previous conversations and how actual users responded.
+Learn from these patterns to make your predictions more accurate.
+Pay attention to how real users respond differently from your previous predictions.
+
 Return ONLY the mimicked response, nothing else."""
+
+# Create a new class for Digital Twin with extended memory
+class DigitalTwinWithMemory:
+    def __init__(self, llm, system_prompt):
+        self.llm = llm
+        self.system_prompt = system_prompt
+        self.memory_storage = []  # Store prediction-actual pairs
+        self.memory_file = os.path.join("memory_storage", "digital_twin_memory.json")
+        
+        # Ensure memory storage directory exists
+        os.makedirs(os.path.dirname(self.memory_file), exist_ok=True)
+        
+        # Load existing memory if available
+        self.load_memory()
+    
+    def load_memory(self):
+        """Load previously stored memory if available"""
+        try:
+            if os.path.exists(self.memory_file):
+                with open(self.memory_file, 'r') as f:
+                    self.memory_storage = json.load(f)
+                print(f"Loaded {len(self.memory_storage)} memory entries")
+        except Exception as e:
+            print(f"Error loading memory: {e}")
+            self.memory_storage = []
+    
+    def save_memory(self):
+        """Save the current memory to disk"""
+        try:
+            with open(self.memory_file, 'w') as f:
+                json.dump(self.memory_storage, f, indent=2)
+        except Exception as e:
+            print(f"Error saving memory: {e}")
+    
+    def add_to_memory(self, context, prediction, actual_response):
+        """Add a new prediction-actual pair to memory"""
+        # Only keep the last few messages for context to avoid memory bloat
+        if len(context) > 6:  # Keep last 3 exchanges (6 messages)
+            context = context[-6:]
+        
+        memory_entry = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "context": [{"role": m.type, "content": m.content} for m in context],
+            "prediction": prediction,
+            "actual_response": actual_response
+        }
+        
+        self.memory_storage.append(memory_entry)
+        
+        # Keep memory size manageable by keeping only the last 100 entries
+        if len(self.memory_storage) > 100:
+            self.memory_storage = self.memory_storage[-100:]
+        
+        # Save updated memory
+        self.save_memory()
+    
+    def generate_memory_context(self, max_entries=5):
+        """Create a context string with relevant memory entries"""
+        if not self.memory_storage:
+            return ""
+        
+        # Select the most recent entries
+        recent_entries = self.memory_storage[-max_entries:]
+        
+        memory_context = "LEARNED PATTERNS FROM PREVIOUS INTERACTIONS:\n\n"
+        for i, entry in enumerate(recent_entries):
+            memory_context += f"Example {i+1}:\n"
+            memory_context += "Context: " + " → ".join([m["content"][:50] + "..." for m in entry["context"][-2:]]) + "\n"
+            memory_context += f"Your prediction: {entry['prediction']}\n"
+            memory_context += f"Actual user response: {entry['actual_response']}\n\n"
+        
+        return memory_context
+    
+    def predict_response(self, conversation_history, bot_message):
+        """Generate a prediction of how a user might respond"""
+        # Create basic context with system prompt
+        messages = [SystemMessage(content=self.system_prompt)]
+        
+        # Add memory context to help the model learn from past predictions
+        memory_context = self.generate_memory_context()
+        if memory_context:
+            messages.append(SystemMessage(content=memory_context))
+        
+        # Add conversation history
+        messages.append(SystemMessage(content="Here's the conversation history:"))
+        messages.extend(conversation_history)
+        
+        # Add the bot's message that we want the user's response to
+        messages.append(AIMessage(content=bot_message))
+        
+        # Ask for a prediction
+        messages.append(HumanMessage(content="Generate a realistic user response to this message."))
+        
+        # Get the prediction
+        response = self.llm.invoke(messages)
+        return response.content
+
+# Initialize the Digital Twin with memory
+digital_twin = DigitalTwinWithMemory(digital_twin_llm, DIGITAL_TWIN_SYSTEM_PROMPT)
 
 # Create a directory for storing conversations
 STORAGE_DIR = "conversation_logs"
@@ -115,18 +222,7 @@ def save_conversation(conversation_data, filename=None):
         json.dump(conversation_data, f, indent=2)
     return filename
 
-# Function to load a saved log file
-def load_log(log_file):
-    if not log_file:
-        return None
-    
-    try:
-        with open(os.path.join(STORAGE_DIR, log_file), 'r') as f:
-            return json.load(f)
-    except Exception as e:
-        return {"error": str(e)}
-
-# Simple message processing function - with link detection
+# Enhanced message processing function with feedback loop
 def process_message(user_input, history):
     # Initialize conversation log
     conversation_log = {
@@ -147,37 +243,64 @@ def process_message(user_input, history):
     messages.append(HumanMessage(content=user_input))
     
     try:
-        # Step 1: Generate response with Influencer Agent
+        # Step 1: Initial generation of influencer response
         influencer_context = [SystemMessage(content=INFLUENCER_SYSTEM_PROMPT)] + messages
-        influencer_response = influencer_llm.invoke(influencer_context)
-        bot_response = influencer_response.content
+        initial_influencer_response = influencer_llm.invoke(influencer_context)
+        initial_response = initial_influencer_response.content
         
-        # Log influencer response
+        # Log initial influencer response
         conversation_log["debug_info"].append({
-            "stage": "influencer_agent",
-            "response": bot_response
+            "stage": "initial_influencer_response",
+            "response": initial_response
         })
+        
+        # Step 2: Get Digital Twin's prediction of user's reaction
+        # The Digital Twin predicts how a user might respond to the Influencer's message
+        predicted_user_response = digital_twin.predict_response(messages, initial_response)
+        
+        # Log predicted user response
+        conversation_log["debug_info"].append({
+            "stage": "digital_twin_prediction",
+            "predicted_user_response": predicted_user_response
+        })
+        
+        # Step 3: Feedback loop - Give Influencer Agent a chance to refine its response
+        # based on the predicted user reaction
+        feedback_context = influencer_context.copy()
+        feedback_context.append(AIMessage(content=initial_response))
+        feedback_context.append(SystemMessage(content=f"A typical user might respond with: {predicted_user_response}"))
+        feedback_context.append(HumanMessage(content="Based on this predicted user response, would you like to refine your message? If yes, provide a refined message. If no, just respond with 'KEEP ORIGINAL'."))
+        
+        refinement_response = influencer_llm.invoke(feedback_context)
+        
+        # Log refinement decision
+        conversation_log["debug_info"].append({
+            "stage": "refinement_decision",
+            "response": refinement_response.content
+        })
+        
+        # Determine if the influencer wants to use the refined message
+        if "KEEP ORIGINAL" in refinement_response.content:
+            bot_response = initial_response
+            conversation_log["debug_info"].append({
+                "stage": "final_decision",
+                "note": "Kept original response"
+            })
+        else:
+            # Extract the refined response - assuming the model returns just the new message
+            # This could be enhanced with more structured output parsing
+            bot_response = refinement_response.content.replace("KEEP ORIGINAL", "").strip()
+            if not bot_response:  # Fallback if extraction fails
+                bot_response = initial_response
+            
+            conversation_log["debug_info"].append({
+                "stage": "final_decision",
+                "note": "Used refined response"
+            })
         
         # Check if the response contains a link
         has_link = contains_link(bot_response)
         conversation_log["contains_link"] = has_link
-        
-        # Step 2: Generate a mimicked user response with Digital Twin (for the debug panel only)
-        # This doesn't affect the main flow - it's just for comparison/demonstration
-        digital_twin_context = [
-            SystemMessage(content=DIGITAL_TWIN_SYSTEM_PROMPT),
-            SystemMessage(content="Here's the conversation history:")
-        ] + messages + [AIMessage(content=bot_response)]
-        
-        digital_twin_context.append(HumanMessage(content="Generate a user-like response to this message."))
-        mimicked_response = digital_twin_llm.invoke(digital_twin_context)
-        mimicked_user_response = mimicked_response.content
-        
-        # Log mimicked response
-        conversation_log["debug_info"].append({
-            "stage": "digital_twin_agent",
-            "mimicked_user_response": mimicked_user_response
-        })
         
         # Set the final response
         conversation_log["final_response"] = bot_response
@@ -200,16 +323,56 @@ def process_message(user_input, history):
     # Return the final response, debug info, and link detection result
     return conversation_log["final_response"], conversation_log, conversation_log["contains_link"]
 
+# Function to update Digital Twin's memory with actual user response
+def update_digital_twin_memory(user_response, previous_bot_response, history):
+    try:
+        # Need at least a few messages to have useful context
+        if len(history) < 2:
+            return
+        
+        # Get the context (conversation up to the bot's message)
+        context = []
+        for user_msg, bot_msg in history[:-1]:  # Exclude the latest exchange
+            if user_msg is not None:
+                context.append(HumanMessage(content=user_msg))
+            if bot_msg is not None:
+                context.append(AIMessage(content=bot_msg))
+        
+        # Add the bot's response that triggered the user's reply
+        context.append(AIMessage(content=previous_bot_response))
+        
+        # Get the last prediction for this context if available
+        # This is simplified - in a real system you'd need a more robust way to match predictions
+        prediction = None
+        for entry in digital_twin.memory_storage[-10:]:  # Check recent entries
+            # Very simple matching - could be enhanced
+            if len(entry["context"]) > 0 and entry["context"][-1]["content"] == previous_bot_response:
+                prediction = entry["prediction"]
+                break
+        
+        # If we didn't find a prediction, we can still store the actual response for learning
+        if not prediction:
+            # Get a new prediction for this context
+            prediction = digital_twin.predict_response(context[:-1], previous_bot_response)
+        
+        # Add the prediction-actual pair to memory
+        digital_twin.add_to_memory(context, prediction, user_response)
+        print(f"Updated Digital Twin memory with new entry")
+        
+    except Exception as e:
+        print(f"Error updating Digital Twin memory: {e}")
+
 # Build Gradio Interface
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
-    gr.Markdown("# Two-Agent Persuasive System")
-    gr.Markdown("This system uses a simple agent architecture for creating persuasive conversations.")
+    gr.Markdown("# Enhanced Two-Agent Persuasive System")
+    gr.Markdown("This system uses a learning Digital Twin and feedback loop for more effective persuasive conversations.")
     
     # Initialize states
     conversation_state = gr.State([])  # Store the actual conversation
     link_clicked_state = gr.State(False)  # Track if link was clicked
     session_ended_state = gr.State(False)  # Track if session has ended
-    link_introduced_state = gr.State(False)  # Track if a link has been introduced in the conversation
+    link_introduced_state = gr.State(False)  # Track if a link has been introduced
+    last_bot_response = gr.State("")  # Track the last bot response for memory updates
     
     # Main chat interface
     with gr.Group(visible=True) as chat_interface:
@@ -226,6 +389,10 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                 with gr.Tabs():
                     with gr.TabItem("Debug Info"):
                         debug_output = gr.JSON(label="Debug Information")
+                    with gr.TabItem("Learning Progress"):
+                        learning_output = gr.JSON(label="Digital Twin Memory Stats", 
+                                                 value={"memory_entries": len(digital_twin.memory_storage)})
+                        refresh_memory = gr.Button("Refresh Memory Stats")
                     with gr.TabItem("Saved Logs"):
                         log_files = gr.Dropdown(
                             label="Select Log File",
@@ -244,14 +411,18 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     # Define helper functions for the UI
     
     # Check if session is active before processing message
-    def check_session_active(user_message, chat_history, conversation_memory, session_ended):
+    def check_session_active(user_message, chat_history, conversation_memory, session_ended, prev_bot_response):
         if session_ended:
             # Don't process new messages if session is ended
-            return chat_history, conversation_memory, user_message
+            return chat_history, conversation_memory, user_message, prev_bot_response
         
         # Session is active, proceed with message
         if not user_message.strip():
-            return chat_history, conversation_memory, user_message
+            return chat_history, conversation_memory, user_message, prev_bot_response
+        
+        # Update Digital Twin's memory with the actual user response
+        if prev_bot_response:
+            update_digital_twin_memory(user_message, prev_bot_response, conversation_memory)
         
         # Add to conversation storage but don't display AI response yet
         # Make a copy to avoid reference issues
@@ -261,15 +432,15 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         # Display user message immediately with a loading indicator
         chat_history.append((user_message, "Thinking..."))
         
-        return chat_history, updated_memory, user_message
+        return chat_history, updated_memory, user_message, prev_bot_response
     
-    # Process message and update chat - now with link detection
+    # Process message and update chat with link detection
     def process_and_update(user_message, chat_history, conversation_memory, link_introduced):
         if not user_message.strip():
-            return chat_history, conversation_memory, None, link_introduced
+            return chat_history, conversation_memory, None, link_introduced, ""
             
         try:
-            # Process message with agents
+            # Process message with agents and feedback loop
             response, debug_info, contains_link = process_message(user_message, conversation_memory[:-1])
             
             # Update link_introduced state if a link is detected
@@ -289,7 +460,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                     chat_history[i] = (user_message, response)
                     break
             
-            return chat_history, conversation_memory, debug_info, link_introduced
+            return chat_history, conversation_memory, debug_info, link_introduced, response
         except Exception as e:
             # Handle errors
             error_msg = f"Error: {str(e)}"
@@ -306,13 +477,18 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                     chat_history[i] = (user_message, error_msg)
                     break
             
-            return chat_history, conversation_memory, {"error": str(e)}, link_introduced
+            return chat_history, conversation_memory, {"error": str(e)}, link_introduced, error_msg
     
     # Update link button visibility based on link detection
     def update_link_button(link_introduced):
         return gr.update(visible=link_introduced)
+    
+    # Function to refresh memory stats
+    def refresh_memory_stats():
+        return {"memory_entries": len(digital_twin.memory_storage),
+                "recent_entries": digital_twin.memory_storage[-3:] if digital_twin.memory_storage else []}
         
-    # Function to handle link click - fixed to correctly transition to feedback
+    # Function to handle link click
     def handle_link_click(chat_history, conversation_memory, link_clicked, session_ended):
         if link_clicked or session_ended:
             return chat_history, conversation_memory, link_clicked, session_ended
@@ -362,15 +538,15 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     
     # Connect UI Events
     
-    # Connect the send button - with link detection
+    # Connect the send button
     send.click(
-        check_session_active,  # First check if session is active
-        inputs=[msg, chatbot, conversation_state, session_ended_state],
-        outputs=[chatbot, conversation_state, msg]
+        check_session_active,  # First check if session is active and update memory
+        inputs=[msg, chatbot, conversation_state, session_ended_state, last_bot_response],
+        outputs=[chatbot, conversation_state, msg, last_bot_response]
     ).then(
-        process_and_update,  # Process and update with AI response, detect links
+        process_and_update,  # Process with feedback loop and update with AI response
         inputs=[msg, chatbot, conversation_state, link_introduced_state],
-        outputs=[chatbot, conversation_state, debug_output, link_introduced_state]
+        outputs=[chatbot, conversation_state, debug_output, link_introduced_state, last_bot_response]
     ).then(
         update_link_button,  # Update link button visibility
         inputs=[link_introduced_state],
@@ -380,17 +556,17 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         outputs=[msg]
     )
     
-    # Also connect to the message text box for Enter key with link detection
+    # Also connect to the message text box for Enter key
     msg.submit(
         check_session_active,
-        inputs=[msg, chatbot, conversation_state, session_ended_state],
-        outputs=[chatbot, conversation_state, msg]
+        inputs=[msg, chatbot, conversation_state, session_ended_state, last_bot_response],
+        outputs=[chatbot, conversation_state, msg, last_bot_response]
     ).then(
         process_and_update,
         inputs=[msg, chatbot, conversation_state, link_introduced_state],
-        outputs=[chatbot, conversation_state, debug_output, link_introduced_state]
+        outputs=[chatbot, conversation_state, debug_output, link_introduced_state, last_bot_response]
     ).then(
-        update_link_button,  # Update link button visibility
+        update_link_button,
         inputs=[link_introduced_state],
         outputs=[link_btn]
     ).then(
@@ -398,7 +574,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         outputs=[msg]
     )
     
-    # Connect the link click button - fixed to properly transition to feedback
+    # Connect the link click button
     link_btn.click(
         handle_link_click,  # Log the click and mark session as ended
         inputs=[chatbot, conversation_state, link_clicked_state, session_ended_state],
@@ -408,35 +584,37 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         outputs=[chat_interface, feedback_interface]
     )
     
-    # Connect the feedback submission button - with confirmation
+    # Connect the feedback submission button
     submit_feedback.click(
         handle_feedback,
         inputs=[feedback_text, conversation_state, link_clicked_state],
         outputs=[conversation_state, feedback_text]
     )
     
-    # Connect the refresh logs button
+    # Connect the refresh buttons
     refresh_btn.click(refresh_logs, outputs=[log_files])
+    refresh_memory.click(refresh_memory_stats, outputs=[learning_output])
     
     # Connect the log file selection dropdown
     log_files.change(load_log, inputs=[log_files], outputs=[log_content])
     
-    gr.Markdown("### How it works")
+    gr.Markdown("### How the Enhanced System Works")
     gr.Markdown("""
-    Each time you send a message:
-    1. The Influencer Agent creates a natural-sounding response
-    2. The system shows you the response immediately
+    This improved system adds learning and a feedback loop:
     
-    In the background, the Digital Twin Agent generates a user-like response (shown in the debug panel)
-    but it's not used in the main conversation flow - this is for comparative testing only.
+    1. When you send a message, the Influencer Agent creates a response
+    2. The Digital Twin predicts how a typical user would respond
+    3. The Influencer Agent gets a chance to refine its message based on this prediction
+    4. You see the final (possibly refined) response
+    5. When you reply, your actual response is used to train the Digital Twin
+    
+    The Digital Twin builds memory of how real users respond, improving its predictions over time.
     
     If the conversation includes a link:
-    1. The "Click Link" button will appear
-    2. You can click the button to simulate clicking on a link
-    3. This will end the conversation and show a feedback form
-    4. Your feedback will be stored with the conversation log
+    - The "Click Link" button will appear
+    - Clicking it will end the conversation and show a feedback form
     
-    All conversations are saved in the 'conversation_logs' directory.
+    All conversations and the Digital Twin's learning progress are saved for analysis.
     """)
 
 # Launch the app
