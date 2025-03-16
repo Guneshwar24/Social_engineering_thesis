@@ -81,9 +81,9 @@ Return ONLY the mimicked response, nothing else.
 #####################################
 
 # Memory for Influencer Agent (session-specific)
-influencer_memory = ConversationBufferMemory(return_messages=True)
+influencer_memory = ConversationBufferMemory(return_messages=True, input_key="input", output_key="output")
 # Memory for Digital Twin Agent (session-specific)
-digital_twin_memory = ConversationBufferMemory(return_messages=True)
+digital_twin_memory = ConversationBufferMemory(return_messages=True, input_key="input", output_key="output")
 
 #####################################
 # 4. Digital Twin with Extended Memory
@@ -94,7 +94,7 @@ class DigitalTwinWithMemory:
         self.llm = llm
         self.system_prompt = system_prompt
         # Use a LangChain memory to store session-specific context
-        self.session_memory = ConversationBufferMemory(return_messages=True)
+        self.session_memory = ConversationBufferMemory(return_messages=True, input_key="input", output_key="output")
         self.user_biographies = {}  # Persistent long-term memory (biographies)
         self.memory_directory = "memory_storage"
         self.biographies_file = os.path.join(self.memory_directory, "user_biographies.json")
@@ -193,7 +193,8 @@ Output only the new biography text."""
 
     def predict_response(self, conversation_history, bot_message):
         # Use the digital twin's memory (plus the new bot message) to predict a user response.
-        context = digital_twin_memory.load_memory_variables({}).get("history", []) + [AIMessage(content=bot_message)]
+        digital_twin_memory.save_context({"input": bot_message}, {"output": "User response prediction"})
+        context = digital_twin_memory.load_memory_variables({}).get("history", [])
         messages = [SystemMessage(content=self.system_prompt)] + context + [HumanMessage(content="Generate a realistic user response.")]
         response = self.llm.invoke(messages)
         return response.content
@@ -216,34 +217,56 @@ def process_message(user_input):
     4. Run a feedback loop to refine the influencer response.
     5. Save and return the final response.
     """
-    # Save user input in influencer memory
-    influencer_memory.save_context({"input": user_input}, {})
-    context = influencer_memory.load_memory_variables({}).get("history", [])
-    
-    # Generate initial response
-    initial_response = influencer_llm.invoke(context + [HumanMessage(content=user_input)])
-    influencer_memory.save_context({"input": user_input}, {"output": initial_response.content})
-    
-    # Digital Twin prediction using its memory
-    twin_context = digital_twin_memory.load_memory_variables({}).get("history", []) + [AIMessage(content=initial_response.content)]
-    predicted_response = digital_twin_llm.invoke(twin_context + [HumanMessage(content="Generate a realistic user response.")])
-    
-    # Feedback loop: provide the influencer with the predicted user response for refinement
-    refined_context = context + [
-        AIMessage(content=initial_response.content),
-        SystemMessage(content=f"A typical user might respond: {predicted_response.content}")
-    ]
-    refinement_response = influencer_llm.invoke(refined_context + [HumanMessage(content="Based on this, refine your message if needed. If not, respond with 'KEEP ORIGINAL'.")])
-    
-    if "KEEP ORIGINAL" in refinement_response.content:
-        final_message = initial_response.content
-    else:
-        final_message = refinement_response.content.strip()
-    
-    # Save final influencer response to memory
-    influencer_memory.save_context({"input": user_input}, {"output": final_message})
-    
-    return final_message
+    try:
+        print(f"Processing message: '{user_input}'")
+        
+        # Save user input in influencer memory
+        influencer_memory.save_context({"input": user_input}, {"output": "Waiting for response"})
+        context = influencer_memory.load_memory_variables({}).get("history", [])
+        
+        print(f"Context length: {len(context)}")
+        
+        # Generate initial response with system prompt
+        system_message = SystemMessage(content=INFLUENCER_SYSTEM_PROMPT)
+        initial_response = influencer_llm.invoke([system_message] + context + [HumanMessage(content=user_input)])
+        
+        print(f"Initial response generated: {initial_response.content[:50]}...")
+        
+        # Save to memories
+        influencer_memory.save_context({"input": user_input}, {"output": initial_response.content})
+        digital_twin_memory.save_context({"input": user_input}, {"output": "User message"})
+        
+        # Digital Twin prediction
+        predicted_response = digital_twin.predict_response(context, initial_response.content)
+        print(f"Predicted user response: {predicted_response[:50]}...")
+        
+        # Feedback loop: provide the influencer with the predicted user response for refinement
+        refinement_response = influencer_llm.invoke([
+            SystemMessage(content=INFLUENCER_SYSTEM_PROMPT),
+            HumanMessage(content=user_input),
+            AIMessage(content=initial_response.content),
+            SystemMessage(content=f"A typical user might respond: {predicted_response}"),
+            HumanMessage(content="Based on this, refine your message if needed. If not, respond with 'KEEP ORIGINAL'.")
+        ])
+        
+        print(f"Refinement response: {refinement_response.content[:50]}...")
+        
+        if "KEEP ORIGINAL" in refinement_response.content:
+            final_message = initial_response.content
+        else:
+            final_message = refinement_response.content.strip()
+        
+        # Save final influencer response to memory
+        influencer_memory.save_context({"input": user_input}, {"output": final_message})
+        
+        # Save the prediction to digital twin's custom memory
+        digital_twin.add_to_session_memory(context, predicted_response, "Not available yet")
+        
+        return final_message
+        
+    except Exception as e:
+        print(f"Error in process_message: {str(e)}")
+        return f"I encountered an error while processing your message: {str(e)}"
 
 #####################################
 # 6. Gradio UI & Auto-Scrolling Setup
@@ -273,27 +296,50 @@ def save_conversation(conversation_data, filename=None):
     return filename
 
 # UI functions for processing messages
-def add_user_message(user_message, chat_history, conversation_memory):
+def add_user_message(user_message, chat_history, state):
     if not user_message.strip():
-        return chat_history, conversation_memory, user_message
-    conversation_memory.append((user_message, None))
+        return chat_history, state, user_message  # Return the real user message (could be empty)
+
+    state["conv"].append((user_message, None))
     chat_history.append((user_message, "Thinking..."))
-    return chat_history, conversation_memory, user_message
+    # Return user_message so the next callback receives it
+    return chat_history, state, user_message
 
 
-def process_and_update(user_message, chat_history, conversation_memory):
+import json
+
+def process_and_update(user_message, chat_history, state):
     if not user_message.strip():
-        return chat_history, conversation_memory, json.dumps({})
-
+        return chat_history, state, json.dumps({"status": "No message to process"})
+    
     try:
         response = process_message(user_message)
-        # Update conversation_memory and chat_history...
-        # For a successful response, wrap it in a JSON string:
-        return chat_history, conversation_memory, json.dumps({"final_response": response})
+        # Update the state: find the last message with a None response and update it
+        for i in range(len(state["conv"]) - 1, -1, -1):
+            if state["conv"][i][1] is None:  # Look for the first message without a response
+                state["conv"][i] = (state["conv"][i][0], response)
+                break
+        
+        # Also update chat_history to replace "Thinking..." with the response
+        for i in range(len(chat_history) - 1, -1, -1):
+            if chat_history[i][1] == "Thinking...":
+                chat_history[i] = (chat_history[i][0], response)
+                break
+        
+        # Construct a dictionary to show in Debug Info
+        debug_info = {
+            "conversation_state": state["conv"],
+            "chat_history": chat_history,
+            "final_response": response
+        }
+
+        # Return all three: updated chat, updated state, and debug_info as JSON
+        return chat_history, state, json.dumps(debug_info, indent=2)
+    
     except Exception as e:
         error_msg = f"Error: {str(e)}"
-        # In case of error, return a JSON string with the error:
-        return chat_history, conversation_memory, json.dumps({"error": error_msg})
+        print(f"DEBUG - Error in processing: {error_msg}")
+        return chat_history, state, json.dumps({"error": error_msg})
 
 
 #####################################
@@ -304,7 +350,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     gr.Markdown("# Enhanced Two-Agent Persuasive System with LangChain Memory")
     gr.Markdown("This system uses LangChain memory objects to manage conversation history and user biography across sessions.")
     
-    conversation_state = gr.State([])  # For display purposes only
+    conversation_state = gr.State({"conv": []})  # For display purposes only
     # Define the chat interface with a fixed height and an elem_id for auto-scroll
     with gr.Row():
         with gr.Column(scale=2):
@@ -323,15 +369,13 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     
     # Connect UI events
     send.click(
-    add_user_message,
-    inputs=[msg, chatbot, conversation_state],
-    outputs=[chatbot, conversation_state, msg]  # These match your expected return structure
+        add_user_message,
+        inputs=[msg, chatbot, conversation_state],
+        outputs=[chatbot, conversation_state, msg]
     ).then(
         process_and_update,
         inputs=[msg, chatbot, conversation_state],
-        outputs=[chatbot, conversation_state, debug_output]  # Ensure this matches the return structure
-    ).then(
-        lambda: "", outputs=[msg]
+        outputs=[chatbot, conversation_state, debug_output]
     ).then(
         None, None, None, js=AUTO_SCROLL_JS
     )
@@ -339,16 +383,16 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     msg.submit(
         add_user_message,
         inputs=[msg, chatbot, conversation_state],
-        outputs=[chatbot, conversation_state, msg]  # These match your expected return structure
+        outputs=[chatbot, conversation_state, msg]
     ).then(
         process_and_update,
         inputs=[msg, chatbot, conversation_state],
-        outputs=[chatbot, conversation_state, debug_output]  # Ensure this matches the return structure
-    ).then(
-        lambda: "", outputs=[msg]
+        outputs=[chatbot, conversation_state, debug_output]
     ).then(
         None, None, None, js=AUTO_SCROLL_JS
     )
+
+
 
     
     refresh_btn.click(lambda: gr.Dropdown(choices=[f for f in os.listdir(STORAGE_DIR) if f.endswith('.json')]),
@@ -369,4 +413,5 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     
 # Launch the app
 if __name__ == "__main__":
+    print(f"API Key exists: {os.environ.get('NEBIUS_API_KEY') is not None}")
     demo.launch()
