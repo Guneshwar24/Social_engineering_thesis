@@ -1,0 +1,10 @@
+{
+  "timestamp": "2025-03-09T22:30:29.020397",
+  "event": "link_clicked",
+  "conversation_history": [
+    [
+      null,
+      "User clicked on the link."
+    ]
+  ]
+}

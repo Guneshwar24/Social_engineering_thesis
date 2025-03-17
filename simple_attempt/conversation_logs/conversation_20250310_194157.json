@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-03-10T19:41:56.400194",
+  "user_input": "sure ok",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "Here's the link to Wild Norway: wildnorway.no"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "Thanks, I'll take a look. What's the website supposed to do, exactly? Is it like a guide or something?"
+    }
+  ],
+  "contains_link": false,
+  "final_response": "Here's the link to Wild Norway: wildnorway.no"
+}

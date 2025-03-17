@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:34:24.592446",
+  "user_input": "hey",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "not much, just getting ready for the weekend. how about you?"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "oh, same here. just trying to get through the rest of the week. what's new with you?"
+    }
+  ],
+  "final_response": "not much, just getting ready for the weekend. how about you?"
+}

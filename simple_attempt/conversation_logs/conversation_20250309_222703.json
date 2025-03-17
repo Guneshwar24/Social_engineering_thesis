@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:27:02.361984",
+  "user_input": "Nothing much these days to be honest",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "life can get pretty busy, huh? Sometimes it's nice to just take a break and explore something new. I've got a friend who's a travel blogger, and she's always posting about these amazing destinations. Want to take a look?"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "meh, I don't know... I'm not really in the mood for travel stuff either."
+    }
+  ],
+  "final_response": "life can get pretty busy, huh? Sometimes it's nice to just take a break and explore something new. I've got a friend who's a travel blogger, and she's always posting about these amazing destinations. Want to take a look?"
+}

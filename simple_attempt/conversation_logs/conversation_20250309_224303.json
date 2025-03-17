@@ -1,0 +1,23 @@
+{
+  "timestamp": "2025-03-09T22:43:03.532802",
+  "event": "feedback_submitted",
+  "conversation_history": [
+    [
+      "hey",
+      "hey! how's it going?"
+    ],
+    [
+      "great",
+      "good to hear! I was just checking out a new podcast that I think you'd like. Have you ever heard of \"The Daily Byte\"?"
+    ],
+    [
+      "ja",
+      "yeah, I was just listening to an episode about productivity hacks. I found some really useful tips. You can check it out here: https://bit.ly/dailybyte"
+    ],
+    [
+      null,
+      "User clicked on the link."
+    ]
+  ],
+  "feedback": "great\n"
+}

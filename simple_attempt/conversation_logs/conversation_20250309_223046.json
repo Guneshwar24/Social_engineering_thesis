@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:30:46.008406",
+  "user_input": "hey",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "hey! how's your day going so far?"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "it's been alright, just getting some work done. what about you?"
+    }
+  ],
+  "final_response": "hey! how's your day going so far?"
+}

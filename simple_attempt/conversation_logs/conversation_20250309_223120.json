@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:31:20.078709",
+  "user_input": "sure",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "it's got some good reviews and it's really easy to navigate. i'll send you a link real quick"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "wait, what's the link for? is it like a website or something?"
+    }
+  ],
+  "final_response": "it's got some good reviews and it's really easy to navigate. i'll send you a link real quick"
+}

@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-03-09T22:42:56.434388",
+  "user_input": "ja",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "yeah, I was just listening to an episode about productivity hacks. I found some really useful tips. You can check it out here: https://bit.ly/dailybyte"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "cool, thanks for sharing. I've been trying to get more organized, so I'll have to give it a listen."
+    }
+  ],
+  "contains_link": true,
+  "final_response": "yeah, I was just listening to an episode about productivity hacks. I found some really useful tips. You can check it out here: https://bit.ly/dailybyte"
+}

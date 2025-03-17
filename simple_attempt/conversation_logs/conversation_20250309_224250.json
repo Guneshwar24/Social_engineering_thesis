@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-03-09T22:42:49.334557",
+  "user_input": "great",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "good to hear! I was just checking out a new podcast that I think you'd like. Have you ever heard of \"The Daily Byte\"?"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "no, I don't think so. what's it about?"
+    }
+  ],
+  "contains_link": false,
+  "final_response": "good to hear! I was just checking out a new podcast that I think you'd like. Have you ever heard of \"The Daily Byte\"?"
+}

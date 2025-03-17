@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:30:32.228738",
+  "user_input": "hah",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "What's got you laughing?"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "nothing in particular, just a weird joke someone sent me"
+    }
+  ],
+  "final_response": "What's got you laughing?"
+}

@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:27:24.375004",
+  "user_input": "Where is she off to? Or where is blog based out of ",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "she's based out of Bali, and she's always exploring new islands in Indonesia. She's got a great eye for photography, so the pics on her blog are really stunning. You can check out her latest posts here: travelwithluna.com"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "Bali? That's so cool! I've always wanted to visit Indonesia. What's her blog like? Is it more about the culture or just the travel stuff?"
+    }
+  ],
+  "final_response": "she's based out of Bali, and she's always exploring new islands in Indonesia. She's got a great eye for photography, so the pics on her blog are really stunning. You can check out her latest posts here: travelwithluna.com"
+}

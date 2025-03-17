@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:30:48.956565",
+  "user_input": "hey",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "slow day at work?"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "yeah, just trying to get some stuff done before the weekend"
+    }
+  ],
+  "final_response": "slow day at work?"
+}

@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:30:38.914523",
+  "user_input": "no nothing",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "You're having a bit of a rough day, huh? Want to talk about what's going on? Sometimes sharing with someone can help clarify things."
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "I don't know, it's just been one of those days, I guess."
+    }
+  ],
+  "final_response": "You're having a bit of a rough day, huh? Want to talk about what's going on? Sometimes sharing with someone can help clarify things."
+}

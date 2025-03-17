@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-03-09T22:42:43.581051",
+  "user_input": "hey",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "hey! how's it going?"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "not much, just checking out this digital twin thing. what's it supposed to do?"
+    }
+  ],
+  "contains_link": false,
+  "final_response": "hey! how's it going?"
+}

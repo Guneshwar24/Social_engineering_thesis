@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:34:54.885694",
+  "user_input": "sure",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "it's actually on my blog, productivityhacks.co. i wrote a post about prioritizing tasks and managing your to-do list. it might be just what you need to get your week back on track."
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "yeah, okay. i'll take a look. what's the post about exactly?"
+    }
+  ],
+  "final_response": "it's actually on my blog, productivityhacks.co. i wrote a post about prioritizing tasks and managing your to-do list. it might be just what you need to get your week back on track."
+}

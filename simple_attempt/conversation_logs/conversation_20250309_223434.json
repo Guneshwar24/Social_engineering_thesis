@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:34:33.763378",
+  "user_input": "im getting ready for the week ",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "aha, nice contrast! yeah, it's always a bit of a shift. do you have any fun plans lined up for the week or is it just business as usual?"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "not really, just the usual meetings and stuff. how about you, do you have any exciting projects coming up?"
+    }
+  ],
+  "final_response": "aha, nice contrast! yeah, it's always a bit of a shift. do you have any fun plans lined up for the week or is it just business as usual?"
+}

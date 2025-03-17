@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:30:51.205598",
+  "user_input": "hey",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "yah, same here. need a little break. you do anything fun over the weekend?"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "not really, just caught up on some stuff around the house. you?"
+    }
+  ],
+  "final_response": "yah, same here. need a little break. you do anything fun over the weekend?"
+}

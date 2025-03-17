@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:31:23.352214",
+  "user_input": "ha",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "yeah, it's pretty helpful. okay, here's the link: [www.watchthisweek.com](http://www.watchthisweek.com)"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "wait, you can't just send me a link out of nowhere. how do i know it's safe?"
+    }
+  ],
+  "final_response": "yeah, it's pretty helpful. okay, here's the link: [www.watchthisweek.com](http://www.watchthisweek.com)"
+}

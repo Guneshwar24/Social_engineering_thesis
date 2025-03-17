@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:20:21.003256",
+  "user_input": "hey",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "what's up? just got back from a hike and I'm feeling pretty relaxed. how about you, doing anything exciting?"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "not really, just got back from a meeting at work. it was pretty uneventful, just the usual stuff. how's the hike? was it a tough one?"
+    }
+  ],
+  "final_response": "what's up? just got back from a hike and I'm feeling pretty relaxed. how about you, doing anything exciting?"
+}

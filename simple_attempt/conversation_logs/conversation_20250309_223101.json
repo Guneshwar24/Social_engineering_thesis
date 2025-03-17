@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:31:00.942635",
+  "user_input": "yeah ok",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "so what did you end up doing?"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "not much, just hung out with friends, watched some movies. you know, the usual."
+    }
+  ],
+  "final_response": "so what did you end up doing?"
+}

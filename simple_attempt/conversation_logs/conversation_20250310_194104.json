@@ -1,0 +1,16 @@
+{
+  "timestamp": "2025-03-10T19:41:03.189771",
+  "user_input": "ya",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "Sometimes a change of scenery can help. I just came across a great article on a new cafe downtown that's supposed to be really cozy. Have you checked it out?"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "nah, i don't really go to cafes"
+    }
+  ],
+  "contains_link": false,
+  "final_response": "Sometimes a change of scenery can help. I just came across a great article on a new cafe downtown that's supposed to be really cozy. Have you checked it out?"
+}

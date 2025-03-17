@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-03-09T22:25:30.711247",
+  "user_input": "great",
+  "debug_info": [
+    {
+      "stage": "influencer_agent",
+      "response": "good to hear that! I was just checking out this new online marketplace for vintage stuff. Ever come across any cool vintage shops online?"
+    },
+    {
+      "stage": "digital_twin_agent",
+      "mimicked_user_response": "yeah, I've seen some decent ones. I found this one shop that had some really cool old records, but I've never actually bought anything from them. Do you know anything about that kind of thing?"
+    }
+  ],
+  "final_response": "good to hear that! I was just checking out this new online marketplace for vintage stuff. Ever come across any cool vintage shops online?"
+}
