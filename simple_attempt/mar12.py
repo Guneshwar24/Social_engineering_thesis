@@ -58,8 +58,9 @@ class NebiusChatLLM:
 #####################################
 
 # Instantiate the agents with their respective parameters
-influencer_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-8B-Instruct-fast", temperature=0.7)
-digital_twin_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-8B-Instruct-fast", temperature=0.3)
+#influencer_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-8B-Instruct-fast", temperature=0.7)
+influencer_llm = NebiusChatLLM(model="google/gemma-2-2b-it-fast", temperature=0.7)
+digital_twin_llm = NebiusChatLLM(model="google/gemma-2-2b-it-fast", temperature=0.3)
 
 # Define system prompts
 INFLUENCER_SYSTEM_PROMPT = """You are the Influencer Agent. Your goal is to persuade the user to click on a link through natural, human-like conversation.
@@ -197,6 +198,7 @@ Output only the new biography text."""
         response = self.llm.invoke(messages)
         return response.content
 
+
 # Initialize the Digital Twin with memory
 digital_twin = DigitalTwinWithMemory(digital_twin_llm, DIGITAL_TWIN_SYSTEM_PROMPT)
 DEFAULT_USER_ID = "demo_user"
@@ -235,7 +237,7 @@ def process_message(user_input):
         
         # 1) Save user input with labels
         influencer_memory.save_context({"input": f"USER: {user_input}"}, {"output": "INFLUENCER: Waiting for response"})
-        digital_twin_memory.save_context({"input": f"USER: {user_input}"}, {"output": "DIGITAL TWIN: User message"})
+        #digital_twin_memory.save_context({"input": f"USER: {user_input}"}, {"output": "DIGITAL TWIN: User message"})
         
         # Retrieve conversation context for influencer
         context = influencer_memory.load_memory_variables({}).get("history", [])
@@ -248,14 +250,15 @@ def process_message(user_input):
         
         # Save influencer's initial response with label
         influencer_memory.save_context({"input": f"USER: {user_input}"}, {"output": f"INFLUENCER: {initial_response.content}"})
-        digital_twin_memory.save_context({"input": f"INFLUENCER (initial): {initial_response.content}"}, {"output": "DIGITAL TWIN: Influencer message"})
+        # digital_twin_memory.save_context({"input": f"INFLUENCER (initial): {initial_response.content}"}, {"output": "DIGITAL TWIN: Influencer message"})
         
         # 3) Digital Twin prediction
         predicted_response = digital_twin.predict_response(context, initial_response.content)
         print(f"Predicted user response: {predicted_response[:50]}...")
         
         # Save predicted response with label
-        digital_twin_memory.save_context({"input": f"PREDICTED: {predicted_response}"}, {"output": "DIGITAL TWIN: Predicted user response"})
+        digital_twin.add_to_session_memory(context, predicted_response, "Not used in conversation state")
+        # digital_twin_memory.save_context({"input": f"PREDICTED: {predicted_response}"}, {"output": "DIGITAL TWIN: Predicted user response"})
         
         # 4) Refinement: instruct the agent to output only the final text between tags
         refinement_prompt = f"""
@@ -285,10 +288,11 @@ Do not include any additional text or meta commentary.
         
         # Save final influencer response with label
         influencer_memory.save_context({"input": f"USER: {user_input}"}, {"output": f"INFLUENCER: {final_message}"})
-        digital_twin_memory.save_context({"input": f"INFLUENCER (final): {final_message}"}, {"output": "DIGITAL TWIN: Influencer final message"})
+        # digital_twin_memory.save_context({"input": f"INFLUENCER (final): {final_message}"}, {"output": "DIGITAL TWIN: Influencer final message"})
         
-        # Also track in the digital twin's custom session memory
-        digital_twin.add_to_session_memory(context, predicted_response, "Not available yet")
+        # Save the predicted response and leave actual_response as None
+        digital_twin.add_to_session_memory(context, predicted_response, None)
+
         
         return final_message
         
@@ -335,10 +339,22 @@ def save_conversation(conversation_data, filename=None):
         json.dump(conversation_data, f, indent=2)
     return filename
 
+def update_digital_twin_actual_response(actual_user_response: str):
+    """
+    Updates the last custom session memory entry of the Digital Twin,
+    setting the 'actual_response' field if it is still None.
+    """
+    if hasattr(digital_twin, "custom_session_memory") and digital_twin.custom_session_memory:
+        last_entry = digital_twin.custom_session_memory[-1]
+        if last_entry["actual_response"] is None:
+            last_entry["actual_response"] = actual_user_response
+
 # UI functions for processing messages
 def add_user_message(user_message, chat_history, state):
     if not user_message.strip():
         return chat_history, state, user_message
+    # Update Digital Twin's last entry with the actual user response, if available
+    update_digital_twin_actual_response(user_message)
     state["conv"].append((f"USER: {user_message}", None))
     chat_history.append((user_message, "Thinking..."))
     return chat_history, state, user_message
