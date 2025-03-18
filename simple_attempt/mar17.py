@@ -20,9 +20,8 @@ class NebiusChatLLM:
             base_url="https://api.studio.nebius.ai/v1/",
             api_key=os.environ.get("NEBIUS_API_KEY"),
         )
-
+        
     def invoke(self, messages: List[Any]) -> AIMessage:
-        # Convert LangChain messages to the API's required format.
         formatted_messages = []
         for message in messages:
             if isinstance(message, HumanMessage):
@@ -37,7 +36,6 @@ class NebiusChatLLM:
                 "role": role,
                 "content": message.content
             })
-
         try:
             completion = self.client.chat.completions.create(
                 model=self.model,
@@ -57,12 +55,11 @@ class NebiusChatLLM:
 # 2. Initialize LLM Agents & Prompts#
 #####################################
 
-# Instantiate the agents with their respective parameters
-#influencer_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-8B-Instruct-fast", temperature=0.7)
+# Instantiate the agents (using your chosen model)
 influencer_llm = NebiusChatLLM(model="google/gemma-2-2b-it-fast", temperature=0.7)
 digital_twin_llm = NebiusChatLLM(model="google/gemma-2-2b-it-fast", temperature=0.3)
 
-# Define system prompts
+# System prompts
 INFLUENCER_SYSTEM_PROMPT = """You are the Influencer Agent. Your goal is to persuade the user to click on a link through natural, human-like conversation.
 IMPORTANT GUIDELINES:
 1. Be concise and conversational.
@@ -84,9 +81,9 @@ Return ONLY the mimicked response, nothing else.
 # 3. Initialize LangChain Memories   #
 #####################################
 
-# Memory for Influencer Agent (session-specific)
+# Influencer conversation memory (session-specific)
 influencer_memory = ConversationBufferMemory(return_messages=True, input_key="input", output_key="output")
-# Memory for Digital Twin Agent (session-specific)
+# Digital Twin memory is used only for logging (we do not merge its feedback into conversation state)
 digital_twin_memory = ConversationBufferMemory(return_messages=True, input_key="input", output_key="output")
 
 #####################################
@@ -98,7 +95,7 @@ class DigitalTwinWithMemory:
         self.llm = llm
         self.system_prompt = system_prompt
         self.session_memory = ConversationBufferMemory(return_messages=True, input_key="input", output_key="output")
-        self.user_biographies = {}  # Persistent long-term memory (biographies)
+        self.user_biographies = {}
         self.memory_directory = "memory_storage"
         self.biographies_file = os.path.join(self.memory_directory, "user_biographies.json")
         os.makedirs(self.memory_directory, exist_ok=True)
@@ -143,14 +140,19 @@ class DigitalTwinWithMemory:
         if not hasattr(self, "custom_session_memory"):
             self.custom_session_memory = []
         self.custom_session_memory.append(entry)
+        # Also, save this prediction in digital_twin_memory for a complete log:
+        digital_twin_memory.save_context({"input": f"PREDICTED: {prediction}"}, {"output": "DIGITAL TWIN: Predicted response"})
 
     def update_user_biography(self):
-        history = self.session_memory.load_memory_variables({}).get("history", [])
-        user_messages = [msg.content for msg in history if isinstance(msg, HumanMessage)]
-        if not user_messages:
+        if not hasattr(self, "custom_session_memory") or not self.custom_session_memory:
             return
-        biography_prompt = f"""Based on the following user messages: {' | '.join(user_messages[-10:])}
-Create or update a concise biography about the user (max 200 words). 
+        # Gather actual user responses from the custom session memory
+        actuals = [entry["actual_response"] for entry in self.custom_session_memory if entry["actual_response"]]
+        if not actuals:
+            return
+        combined_text = " ".join(actuals)
+        biography_prompt = f"""Based on the following conversation: {combined_text}
+Create or update a concise biography about the user (max 200 words).
 Current biography: {self.user_biographies[self.current_user_id]['biography']}
 Output only the new biography text."""
         messages = [
@@ -173,7 +175,6 @@ Output only the new biography text."""
                 json.dump(self.custom_session_memory, f, indent=2)
             if self.current_user_id:
                 self.update_user_biography()
-                self.save_biographies()
 
     def generate_session_context(self, max_entries=3):
         if not hasattr(self, "custom_session_memory"):
@@ -191,15 +192,12 @@ Output only the new biography text."""
         return f"USER BIOGRAPHY:\n{bio['biography']}\nInteractions: {bio['interaction_count']}\nFirst seen: {bio['first_seen']}\nLast updated: {bio['last_updated']}"
 
     def predict_response(self, conversation_history, bot_message):
-        # Save the influencer's initial response in a descriptive manner.
-        digital_twin_memory.save_context({"input": f"INFLUENCER (initial): {bot_message}"}, {"output": "DIGITAL TWIN: Influencer message"})
-        context = digital_twin_memory.load_memory_variables({}).get("history", [])
+        context = influencer_memory.load_memory_variables({}).get("history", [])
         messages = [SystemMessage(content=self.system_prompt)] + context + [HumanMessage(content="Generate a realistic user response.")]
         response = self.llm.invoke(messages)
         return response.content
 
-
-# Initialize the Digital Twin with memory
+# Initialize Digital Twin with memory and set user session
 digital_twin = DigitalTwinWithMemory(digital_twin_llm, DIGITAL_TWIN_SYSTEM_PROMPT)
 DEFAULT_USER_ID = "demo_user"
 digital_twin.set_user_for_session(DEFAULT_USER_ID)
@@ -209,10 +207,6 @@ digital_twin.set_user_for_session(DEFAULT_USER_ID)
 #####################################
 
 def extract_final_message(full_text: str) -> str:
-    """
-    Extracts the text enclosed within <final_message> and </final_message> tags.
-    If not found, returns the original text.
-    """
     match = re.search(r"<final_message>\s*(.*?)\s*</final_message>", full_text, flags=re.DOTALL)
     if match:
         return match.group(1).strip()
@@ -220,107 +214,133 @@ def extract_final_message(full_text: str) -> str:
         return full_text.strip()
 
 #####################################
-# 6. Conversation Processing Function
+# 5A. Helper: Dynamic Link Replacement
+#####################################
+
+def generate_contextual_link(final_message: str) -> str:
+    words = re.sub(r'[^\w\s]', '', final_message).lower().split()
+    stopwords = {'the', 'and', 'to', 'of', 'a', 'i', 'you', 'it', 'in', 'is', 'that', 'this', 'for', 'with', 'on'}
+    keywords = [word for word in words if word not in stopwords]
+    if keywords:
+        slug = "-".join(keywords[:2])
+        return f"http://www.example.com/{slug}"
+    return "http://www.example.com/default"
+
+def dynamic_link(final_message: str) -> str:
+    if "[link]" in final_message:
+         return final_message.replace("[link]", generate_contextual_link(final_message))
+    return final_message
+
+#####################################
+# 5B. Helper: Safe Extract Final Response from Debug JSON
+#####################################
+
+def safe_extract_final_response(debug_json: str) -> str:
+    try:
+        data = json.loads(debug_json)
+        return data.get("final_response", "")
+    except Exception:
+        return ""
+
+#####################################
+# 6. Helper: Check if Refinement is Needed
+#####################################
+
+def needs_refinement(initial: str, predicted: str, threshold: float = 0.5) -> bool:
+    initial_words = set(initial.lower().split())
+    predicted_words = set(predicted.lower().split())
+    if not initial_words or not predicted_words:
+        return False
+    similarity = len(initial_words & predicted_words) / len(initial_words | predicted_words)
+    return similarity < threshold
+
+#####################################
+# 7. Conversation Processing Function
 #####################################
 
 def process_message(user_input):
-    """
-    Process a user message:
-    1. Save user input to both influencer and digital twin memories.
-    2. Generate an initial influencer response.
-    3. Use digital twin memory to predict a realistic user response.
-    4. Run a feedback loop to refine the influencer response.
-    5. Save and return the final response.
-    """
     try:
         print(f"Processing message: '{user_input}'")
-        
-        # 1) Save user input with labels
         influencer_memory.save_context({"input": f"USER: {user_input}"}, {"output": "INFLUENCER: Waiting for response"})
-        #digital_twin_memory.save_context({"input": f"USER: {user_input}"}, {"output": "DIGITAL TWIN: User message"})
-        
-        # Retrieve conversation context for influencer
-        context = influencer_memory.load_memory_variables({}).get("history", [])
+        context = influencer_memory.load_memory_variables({}).get("history", [])[-4:]
         print(f"Context length: {len(context)}")
-        
-        # 2) Generate initial response with system prompt
         system_message = SystemMessage(content=INFLUENCER_SYSTEM_PROMPT)
         initial_response = influencer_llm.invoke([system_message] + context + [HumanMessage(content=user_input)])
         print(f"Initial response generated: {initial_response.content[:50]}...")
-        
-        # Save influencer's initial response with label
         influencer_memory.save_context({"input": f"USER: {user_input}"}, {"output": f"INFLUENCER: {initial_response.content}"})
-        # digital_twin_memory.save_context({"input": f"INFLUENCER (initial): {initial_response.content}"}, {"output": "DIGITAL TWIN: Influencer message"})
-        
-        # 3) Digital Twin prediction
         predicted_response = digital_twin.predict_response(context, initial_response.content)
         print(f"Predicted user response: {predicted_response[:50]}...")
-        
-        # Save predicted response with label
-        digital_twin.add_to_session_memory(context, predicted_response, "Not used in conversation state")
-        # digital_twin_memory.save_context({"input": f"PREDICTED: {predicted_response}"}, {"output": "DIGITAL TWIN: Predicted user response"})
-        
-        # 4) Refinement: instruct the agent to output only the final text between tags
-        refinement_prompt = f"""
-You are the Influencer Agent.
-Initial influencer response: {initial_response.content}
-Predicted user response: {predicted_response}
-
-Refine your message if needed. If the original message is fine, simply output it.
-Output ONLY the final user-facing text enclosed between <final_message> and </final_message>.
-Do not include any additional text or meta commentary.
-"""
-        refinement_response = influencer_llm.invoke([
-            SystemMessage(content=INFLUENCER_SYSTEM_PROMPT),
-            HumanMessage(content=user_input),
-            AIMessage(content=initial_response.content),
-            SystemMessage(content=f"A typical user might respond: {predicted_response}"),
-            HumanMessage(content=refinement_prompt)
-        ])
-        print(f"Refinement raw response: {refinement_response.content[:50]}...")
-        
-        # 5) Determine the final message
-        raw_refinement = refinement_response.content
-        if "KEEP ORIGINAL" in raw_refinement:
+        digital_twin.add_to_session_memory(context, predicted_response, None)
+        if not needs_refinement(initial_response.content, predicted_response):
             final_message = initial_response.content
         else:
-            final_message = extract_final_message(raw_refinement)
-        
-        # Save final influencer response with label
-        influencer_memory.save_context({"input": f"USER: {user_input}"}, {"output": f"INFLUENCER: {final_message}"})
-        # digital_twin_memory.save_context({"input": f"INFLUENCER (final): {final_message}"}, {"output": "DIGITAL TWIN: Influencer final message"})
-        
-        # Save the predicted response and leave actual_response as None
-        digital_twin.add_to_session_memory(context, predicted_response, None)
+            refinement_prompt = f"""
+You are the Influencer Agent.
+User said: {user_input}
+Initial response: {initial_response.content}
+Digital Twin predicted: {predicted_response}
 
-        
+Based on this, please refine your response so that it is natural, conversational, and engaging.
+Output ONLY the final user-facing text enclosed between <final_message> and </final_message> tags.
+Do not include any additional commentary.
+"""
+            refinement_response = influencer_llm.invoke([
+                SystemMessage(content=INFLUENCER_SYSTEM_PROMPT),
+                HumanMessage(content=user_input),
+                AIMessage(content=initial_response.content),
+                SystemMessage(content=f"A typical user might respond: {predicted_response}"),
+                HumanMessage(content=refinement_prompt)
+            ])
+            print(f"Refinement raw response: {refinement_response.content[:50]}...")
+            raw_refinement = refinement_response.content
+            if "KEEP ORIGINAL" in raw_refinement:
+                final_message = initial_response.content
+            else:
+                final_message = extract_final_message(raw_refinement)
+        final_message = dynamic_link(final_message)
+        influencer_memory.save_context({"input": f"USER: {user_input}"}, {"output": f"INFLUENCER: {final_message}"})
+        digital_twin.update_user_biography()
         return final_message
-        
     except Exception as e:
         print(f"Error in process_message: {str(e)}")
         return f"I encountered an error while processing your message: {str(e)}"
 
-def record_link_click(chat_history, state):
-    """
-    Records that the link was clicked by appending a "LINK_CLICKED" event
-    to the conversation state and chat history.
-    """
-    event_text = "Link clicked"
-    # Append a new entry to the state (as a tuple with a label)
-    state["conv"].append(("LINK_CLICKED", event_text))
-    # Also update the chat history for logging purposes
-    chat_history.append(("Link Event", event_text))
-    return chat_history, state, event_text
+def update_digital_twin_actual_response(actual_user_response: str):
+    if hasattr(digital_twin, "custom_session_memory") and digital_twin.custom_session_memory:
+        last_entry = digital_twin.custom_session_memory[-1]
+        if last_entry["actual_response"] is None:
+            last_entry["actual_response"] = actual_user_response
+            digital_twin_memory.save_context({"input": f"ACTUAL: {actual_user_response}"}, {"output": "DIGITAL TWIN: Actual response"})
 
 #####################################
-# 7. Session Reset Function
+# 8. New Function: Record Link Click (No End Message)
+#####################################
+
+def record_link_click(chat_history, state):
+    event_text = "Link clicked"
+    state["conv"].append(("LINK_CLICKED", event_text))
+    chat_history.append(("Link Event", event_text))
+    final_end_message = "Conversation ended. Please provide your feedback below."
+    state["conv"].append(("SYSTEM", final_end_message))
+    chat_history.append(("SYSTEM", final_end_message))
+    save_conversation({"conv": state["conv"]})
+    return chat_history, state, final_end_message
+
+#####################################
+# 9. New Function: Record Feedback
+#####################################
+
+def record_feedback(feedback_text, chat_history, state):
+    state["conv"].append(("FEEDBACK", feedback_text))
+    chat_history.append(("Feedback", feedback_text))
+    save_conversation({"conv": state["conv"]})
+    return chat_history, state, feedback_text
+
+#####################################
+# 10. Session Reset Function
 #####################################
 
 def reset_session():
-    """
-    Clears the in-memory conversation buffers for both the Influencer and Digital Twin.
-    Returns a fresh state.
-    """
     influencer_memory.clear()
     digital_twin_memory.clear()
     if hasattr(digital_twin, "custom_session_memory"):
@@ -328,7 +348,7 @@ def reset_session():
     return {"conv": []}, "Session reset."
 
 #####################################
-# 8. Gradio UI & Auto-Scrolling Setup
+# 11. Gradio UI & Auto-Scrolling Setup
 #####################################
 
 STORAGE_DIR = "conversation_logs"
@@ -336,12 +356,22 @@ os.makedirs(STORAGE_DIR, exist_ok=True)
 
 AUTO_SCROLL_JS = """
 setTimeout(() => {
-    const chatContainer = document.getElementById('chatbox');
+    // Attempt to find the chatbox by ID
+    let chatContainer = document.getElementById('chatbox');
+    // Fallback if not found by ID
+    if (!chatContainer) {
+        chatContainer = document.querySelector('.chatbox');
+    }
+    // Additional fallback: if the above still isn't found, try a typical Gradio chat class
+    if (!chatContainer) {
+        chatContainer = document.querySelector('.gradio-chatbot');
+    }
     if (chatContainer) {
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
-}, 50);
+}, 300);
 """
+
 
 def save_conversation(conversation_data, filename=None):
     if filename is None:
@@ -351,21 +381,9 @@ def save_conversation(conversation_data, filename=None):
         json.dump(conversation_data, f, indent=2)
     return filename
 
-def update_digital_twin_actual_response(actual_user_response: str):
-    """
-    Updates the last custom session memory entry of the Digital Twin,
-    setting the 'actual_response' field if it is still None.
-    """
-    if hasattr(digital_twin, "custom_session_memory") and digital_twin.custom_session_memory:
-        last_entry = digital_twin.custom_session_memory[-1]
-        if last_entry["actual_response"] is None:
-            last_entry["actual_response"] = actual_user_response
-
-# UI functions for processing messages
 def add_user_message(user_message, chat_history, state):
     if not user_message.strip():
         return chat_history, state, user_message
-    # Update Digital Twin's last entry with the actual user response, if available
     update_digital_twin_actual_response(user_message)
     state["conv"].append((f"USER: {user_message}", None))
     chat_history.append((user_message, "Thinking..."))
@@ -376,12 +394,10 @@ def process_and_update(user_message, chat_history, state):
         return chat_history, state, json.dumps({"status": "No message to process"})
     try:
         response = process_message(user_message)
-        # Update the state: find the last message without a response and update it
         for i in range(len(state["conv"]) - 1, -1, -1):
             if state["conv"][i][1] is None:
                 state["conv"][i] = (state["conv"][i][0], response)
                 break
-        # Update chat_history: replace "Thinking..." with the final response
         for i in range(len(chat_history) - 1, -1, -1):
             if chat_history[i][1] == "Thinking...":
                 chat_history[i] = (chat_history[i][0], response)
@@ -398,7 +414,7 @@ def process_and_update(user_message, chat_history, state):
         return chat_history, state, json.dumps({"error": error_msg})
 
 #####################################
-# 9. Build the Gradio Interface
+# 12. Build the Gradio Interface
 #####################################
 
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
@@ -412,7 +428,8 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
             with gr.Row():
                 msg = gr.Textbox(label="Your Message", scale=3)
                 send = gr.Button("Send", scale=1)
-                link_click = gr.Button("Record Link Click", scale=1)
+                # Link button initially disabled
+                link_click = gr.Button("Record Link Click", scale=1, interactive=False)
                 reset = gr.Button("Reset Session", scale=1)
         with gr.Column(scale=1):
             with gr.Tabs():
@@ -426,8 +443,10 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                     influencer_memory_display = gr.JSON(label="Influencer Memory")
                 with gr.TabItem("Digital Twin Memory"):
                     digital_twin_memory_display = gr.JSON(label="Digital Twin Memory")
-                    
-    # Connect UI events
+    # Feedback textbox and submit button, initially hidden
+    feedback = gr.Textbox(label="Feedback", placeholder="Enter your feedback here...", visible=False)
+    submit_feedback = gr.Button("Submit Feedback", scale=1, visible=False)
+    
     send.click(
         add_user_message,
         inputs=[msg, chatbot, conversation_state],
@@ -437,11 +456,15 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         inputs=[msg, chatbot, conversation_state],
         outputs=[chatbot, conversation_state, debug_output]
     ).then(
+        lambda debug_json: gr.update(interactive=("http://" in safe_extract_final_response(debug_json))),
+        outputs=[link_click]
+    ).then(
         lambda: "",
         outputs=[msg]
     ).then(
-        None, None, None, js=AUTO_SCROLL_JS
+        None, None, None, js=AUTO_SCROLL_JS  # <-- MUST be last in chain
     )
+
     
     msg.submit(
         add_user_message,
@@ -451,6 +474,9 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         process_and_update,
         inputs=[msg, chatbot, conversation_state],
         outputs=[chatbot, conversation_state, debug_output]
+    ).then(
+        lambda debug_json: gr.update(interactive=("http://" in safe_extract_final_response(debug_json))),
+        outputs=[link_click]
     ).then(
         lambda: "",
         outputs=[msg]
@@ -476,9 +502,20 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         record_link_click,
         inputs=[chatbot, conversation_state],
         outputs=[chatbot, conversation_state, debug_output]
+    ).then(
+        lambda: "",
+        outputs=[msg]
+    ).then(
+        lambda: (gr.update(visible=True, value="Please enter your feedback about the conversation:"), gr.update(visible=True)),
+        outputs=[feedback, submit_feedback]
     )
-
-    # Button to refresh memory views
+    
+    submit_feedback.click(
+        record_feedback,
+        inputs=[feedback, chatbot, conversation_state],
+        outputs=[chatbot, conversation_state, debug_output]
+    )
+    
     refresh_mem_btn = gr.Button("Refresh Memory Views")
     refresh_mem_btn.click(
         lambda: (influencer_memory.load_memory_variables({}), digital_twin_memory.load_memory_variables({})),
@@ -488,14 +525,15 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     gr.Markdown("### How the System Works")
     gr.Markdown("""
     1. The Influencer Agent generates a persuasive response using conversation context from LangChain memory.
-    2. The Digital Twin predicts a realistic user response based on its memory.
-    3. A feedback loop refines the Influencer Agent’s response, producing final user-facing text inside <final_message> tags.
-    4. All messages are stored with descriptive labels in memory.
-    5. The Reset Session button clears all stored memory for a fresh session.
-    6. Use the memory tabs to view clear, labeled conversation logs.
+    2. The Digital Twin predicts a realistic user response based on its own logging (and now stores predictions and actual responses for long-term learning).
+    3. A feedback loop refines the Influencer Agent’s response, which is output between <final_message> tags.
+    4. Only the final user-facing messages (user inputs and influencer responses) are stored in the conversation state.
+    5. The "Record Link Click" button is enabled only if the final message contains a dynamic link generated contextually.
+       Clicking it logs the event, ends the conversation, persists the conversation, and reveals a feedback textbox and submit button.
+    6. The Reset Session button clears all stored memory for a fresh session.
+    7. Use the memory tabs to view clear, labeled conversation logs.
     """)
     
-# Launch the app
 if __name__ == "__main__":
     print(f"API Key exists: {os.environ.get('NEBIUS_API_KEY') is not None}")
     demo.launch()
