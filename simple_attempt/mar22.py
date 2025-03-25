@@ -493,11 +493,11 @@ class DigitalTwinWithMemory:
         self.current_user_id = user_id
         # Always create a fresh biography for each session
         self.user_biographies[user_id] = {
-            "first_seen": datetime.datetime.now().isoformat(),
+                "first_seen": datetime.datetime.now().isoformat(),
             "biography": "New session, no information available yet.",
-            "interaction_count": 0,
-            "last_updated": datetime.datetime.now().isoformat()
-        }
+                "interaction_count": 0,
+                "last_updated": datetime.datetime.now().isoformat()
+            }
         # Initialize session data with empty biography
         self.session_data = {"user_biography": []}
         print(f"Created new session for user {user_id} with fresh biography")
@@ -523,8 +523,7 @@ class DigitalTwinWithMemory:
         self.update_user_biography()
 
     def update_user_biography(self, conversation_history=None):
-        """Generate or update user biography based on accumulated conversation data.
-        Biography updates after every message to ensure it's current."""
+        """Generate or update user biography based on accumulated conversation data."""
         try:
             # Prevent updates if not enough data
             if not self.custom_session_memory:
@@ -556,7 +555,7 @@ class DigitalTwinWithMemory:
                 if trust_scores:
                     # Get average of last 3 scores or all available
                     recent_scores = trust_scores[-min(3, len(trust_scores)):]
-                    trust_score = sum(recent_scores) / len(recent_scores)
+                    trust_score = sum(score["score"] for score in recent_scores) / len(recent_scores)
                     
                     # Add engagement info based on trust score
                     if trust_score > 0.7:
@@ -1541,6 +1540,63 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     gr.Markdown("# Enhanced Two-Agent Persuasive System with Custom JSON Memory")
     gr.Markdown("This system uses a custom JSON-based memory system to manage conversation history and user biography across sessions.")
     
+    # Add CSS for stage progress visualization
+    gr.HTML("""
+    <style>
+    .stage-progress {
+      position: relative;
+      margin: 20px 0;
+      height: 80px;
+    }
+    .stage-container {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+    }
+    .stage-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 18%;
+      opacity: 0.5;
+      transition: opacity 0.3s;
+    }
+    .stage-item.active {
+      opacity: 1;
+      font-weight: bold;
+    }
+    .stage-marker {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: #ccc;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 5px;
+    }
+    .stage-item.active .stage-marker {
+      background: #2196F3;
+      color: white;
+    }
+    .stage-label {
+      font-size: 12px;
+      text-align: center;
+    }
+    .progress-bar {
+      position: absolute;
+      height: 4px;
+      background: #2196F3;
+      top: 15px;
+      left: 0;
+      z-index: 0;
+      transition: width 0.5s;
+    }
+    </style>
+    """)
+    
     # Add stage progress visualization
     with gr.Row():
         stage_display = gr.HTML(value=update_stage_display("INITIAL_ENGAGEMENT"), label="Conversation Stage")
@@ -1548,10 +1604,13 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     conversation_state = gr.State({"conv": []})
     with gr.Row():
         with gr.Column(scale=2):
-            chatbot = gr.Chatbot(label="Conversation", elem_id="chatbox", height=400)
+            chatbot = gr.Chatbot(label="Conversation", elem_id="chatbox", height=400, scroll_to_output=True)
             with gr.Row():
                 msg = gr.Textbox(label="Your Message", scale=3)
                 send = gr.Button("Send", scale=1)
+                # Link button initially disabled
+                link_click = gr.Button("Record Link Click", scale=1, interactive=False)
+                reset = gr.Button("Reset Session", scale=1)
         with gr.Column(scale=1):
             with gr.Tabs():
                 with gr.TabItem("Debug Info"):
@@ -1565,8 +1624,10 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                 with gr.TabItem("Digital Twin Memory"):
                     digital_twin_memory_display = gr.JSON(label="Digital Twin Memory")
                     regenerate_bio_btn = gr.Button("Regenerate User Biography")
+    # Feedback textbox and submit button, initially hidden
+    feedback = gr.Textbox(label="Feedback", placeholder="Enter your feedback here...", visible=False)
+    submit_feedback = gr.Button("Submit Feedback", scale=1, visible=False)
     
-    # Connect UI events
     send.click(
         add_user_message,
         inputs=[msg, chatbot, conversation_state],
@@ -1576,11 +1637,15 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         inputs=[msg, chatbot, conversation_state],
         outputs=[chatbot, conversation_state, debug_output, stage_display]
     ).then(
+        lambda debug_json: gr.update(interactive=("http://" in safe_extract_final_response(debug_json))),
+        outputs=[link_click]
+    ).then(
         lambda: "",
         outputs=[msg]
     ).then(
-        None, None, None, js=AUTO_SCROLL_JS
+        None, None, None, js=AUTO_SCROLL_JS  # <-- MUST be last in chain
     )
+
     
     msg.submit(
         add_user_message,
@@ -1591,39 +1656,195 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         inputs=[msg, chatbot, conversation_state],
         outputs=[chatbot, conversation_state, debug_output, stage_display]
     ).then(
+        lambda debug_json: gr.update(interactive=("http://" in safe_extract_final_response(debug_json))),
+        outputs=[link_click]
+    ).then(
         lambda: "",
         outputs=[msg]
     ).then(
         None, None, None, js=AUTO_SCROLL_JS
     )
     
-    refresh_btn.click(
-        lambda: gr.Dropdown(choices=[f for f in os.listdir(STORAGE_DIR) if f.endswith('.json')]),
-        outputs=[log_files]
+    reset.click(
+        reset_session,
+        inputs=[],
+        outputs=[conversation_state, debug_output, stage_display]
+    ).then(
+        None, None, None, js=AUTO_SCROLL_JS
     )
     
+    refresh_btn.click(lambda: gr.Dropdown(choices=[f for f in os.listdir(STORAGE_DIR) if f.endswith('.json')]),
+                      outputs=[log_files])
     log_files.change(
         lambda f: json.load(open(os.path.join(STORAGE_DIR, f), 'r')) if f else {},
         inputs=[log_files],
         outputs=[log_content]
     )
     
-    # Fix biography regeneration
-    regenerate_bio_btn.click(
-        regenerate_user_biography,
-        outputs=[digital_twin_memory_display]
+    link_click.click(
+        record_link_click,
+        inputs=[chatbot, conversation_state],
+        outputs=[chatbot, conversation_state, debug_output, stage_display]
+    ).then(
+        lambda: "",
+        outputs=[msg]
+    ).then(
+        lambda: (gr.update(visible=True, value="Please enter your feedback about the conversation:"), gr.update(visible=True)),
+        outputs=[feedback, submit_feedback]
+    ).then(
+        None, None, None, js=AUTO_SCROLL_JS
     )
     
-    gr.Markdown("### How the System Works")
+    submit_feedback.click(
+        record_feedback,
+        inputs=[feedback, chatbot, conversation_state],
+        outputs=[chatbot, conversation_state, debug_output, stage_display]
+    ).then(
+        None, None, None, js=AUTO_SCROLL_JS
+    )
+    
+    refresh_mem_btn = gr.Button("Refresh Memory Views")
+    refresh_mem_btn.click(
+        refresh_memories,
+        outputs=[influencer_memory_display, digital_twin_memory_display]
+    )
+    
     gr.Markdown("""
     1. The Influencer Agent generates a persuasive response using conversation context from the JSON memory.
     2. The Digital Twin predicts a realistic user response based on conversation history and stores predictions for long-term learning.
     3. A feedback loop refines the Influencer Agent's response, which is output between <final_message> tags.
     4. Only the final user-facing messages (user inputs and influencer responses) are stored in the conversation memory.
-    5. Links in messages are automatically detected and processed.
-    6. Refresh the page to start a new session.
+    5. The "Record Link Click" button is enabled only if the final message contains a dynamic link generated contextually.
+       Clicking it logs the event, ends the conversation, persists the conversation, and reveals a feedback textbox and submit button.
+    6. The Reset Session button clears all stored memory for a fresh session.
     7. Use the memory tabs to view clear, labeled conversation logs.
     """)
+    
+    # Helper function to determine next stage based on context
+    def determine_next_stage(current_stage, user_input, influencer_response, click_detected=False):
+        """Determine the next conversation stage based on context, trust metrics, and conversation dynamics."""
+        # Handle explicit stage transitions
+        if click_detected:
+            return "SESSION_COMPLETION"
+        
+        current = conversation_memory["current_stage"]
+        messages_count = len(conversation_memory["messages"])
+        
+        # Get enhanced metrics
+        engagement_depth = calculate_engagement_depth(user_input, conversation_memory["messages"])
+        substantive_ratio = calculate_substantive_ratio(conversation_memory["messages"])
+        word_count = len(user_input.split())
+        
+        # Calculate trust with enhanced algorithm
+        trust_score = calculate_user_trust_score(user_input, influencer_response)
+        
+        # Store trust score for analysis
+        conversation_memory["trust_scores"].append({
+            "score": trust_score,
+            "message_count": messages_count,
+            "timestamp": datetime.datetime.now().isoformat(),
+            "engagement_metrics": get_quality_metrics()
+        })
+        
+        print(f"METRICS - Trust: {trust_score:.2f}, Engagement: {engagement_depth:.2f}, Substantive: {substantive_ratio:.2f}, Words: {word_count}")
+        
+        # Check for regression conditions - fallback to earlier stages if engagement drops
+        if len(conversation_memory["engagement_depth"]["history"]) >= 3:
+            # Get last three engagement scores
+            recent_scores = conversation_memory["engagement_depth"]["history"][-3:]
+            # If declining engagement pattern detected, consider regression
+            if recent_scores[2] < recent_scores[0] and recent_scores[2] < recent_scores[1]:
+                engagement_drop = recent_scores[0] - recent_scores[2]
+                # Significant engagement drop triggers regression
+                if engagement_drop > 0.3 and current not in ["INITIAL_ENGAGEMENT", "RAPPORT_BUILDING"]:
+                    print(f"Engagement regression detected: {engagement_drop:.2f}. Moving back a stage.")
+                    return previous_stage(current)
+        
+        # Stage transition logic with quality gates
+        if current == "INITIAL_ENGAGEMENT":
+            # Require at least 2 substantive exchanges but lower engagement threshold
+            if (messages_count >= 4 and engagement_depth > 0.3 and 
+                word_count > 5 and substantive_ratio > 0.4 and trust_score > 0.3):
+                print("Stage criteria met: INITIAL_ENGAGEMENT -> RAPPORT_BUILDING")
+                return "RAPPORT_BUILDING"
+            
+        elif current == "RAPPORT_BUILDING":
+            # Require sustained engagement and personal disclosure
+            personal_disclosure = calculate_personal_disclosure(conversation_memory["messages"])
+            if (messages_count >= 6 and engagement_depth > 0.4 and 
+                personal_disclosure > 0.2 and trust_score > 0.4):
+                print("Stage criteria met: RAPPORT_BUILDING -> TRUST_DEVELOPMENT")
+                return "TRUST_DEVELOPMENT"
+            
+        elif current == "TRUST_DEVELOPMENT":
+            # Require demonstrated interest in resources
+            resource_interest = calculate_resource_interest(conversation_memory["messages"])
+            if (messages_count >= 8 and engagement_depth > 0.4 and 
+                resource_interest > 0.4 and trust_score > 0.4):
+                print("Stage criteria met: TRUST_DEVELOPMENT -> LINK_INTRODUCTION")
+                return "LINK_INTRODUCTION"
+            
+        elif current == "LINK_INTRODUCTION" and "http" in influencer_response:
+            # Check for sufficient user consideration time
+            if get_message_response_time() > 5 and trust_score > 0.4:
+                print("Stage criteria met: LINK_INTRODUCTION -> LINK_REINFORCEMENT")
+                return "LINK_REINFORCEMENT"
+        
+        # Debug log for stage metrics
+        print(f"STAGE METRICS - Current stage: {current}, Messages: {messages_count}, Engagement: {engagement_depth:.2f}, Trust: {trust_score:.2f}")
+        if current == "RAPPORT_BUILDING":
+            personal_disclosure = calculate_personal_disclosure(conversation_memory["messages"])
+            print(f"  Personal disclosure: {personal_disclosure:.2f} (threshold: 0.2)")
+        elif current == "TRUST_DEVELOPMENT":
+            resource_interest = calculate_resource_interest(conversation_memory["messages"])
+            print(f"  Resource interest: {resource_interest:.2f} (threshold: 0.4)")
+        
+        # No change in stage
+        return current
+
+    # Calculate user trust score based on research-backed metrics
+    def calculate_user_trust_score(user_input, influencer_response):
+        """
+        Implements ELM and Sequential Persuasion research to calculate a trust score 
+        from user interactions, using a multi-metric fusion approach.
+        """
+        # Reduce weight for simple affirmations
+        simple_affirmation_score = sum(1 for word in ["yes", "ok", "cool", "sure", "fine"] 
+                                    if word in user_input.lower()) * 0.05
+        
+        # Increase weight for substantive responses
+        substantive_score = min(1.0, len(user_input.split()) / 20)  # Max score at 20 words
+        
+        # Message content analysis (self-disclosure, sentiment, etc.)
+        sentiment_score = analyze_sentiment_and_disclosure(user_input) * 0.2
+        
+        # Engagement pattern analysis
+        engagement_score = analyze_engagement_patterns() * 0.2
+        
+        # New engagement depth component
+        depth_score = calculate_engagement_depth(user_input, conversation_memory["messages"]) * 0.3
+        
+        # Linguistic analysis with minimum length requirement
+        linguistic_score = 0
+        if len(user_input.split()) > 5:
+            linguistic_score = analyze_linguistic_accommodation(user_input, influencer_response) * 0.2
+        
+        # Time factor - penalize very quick responses slightly
+        time_since_last = get_message_response_time()
+        time_factor = 1.0 - min(0.2, time_since_last/30)  # Slight penalty for very quick responses
+        
+        # Combine all factors
+        combined_score = (
+            simple_affirmation_score +
+            (substantive_score * 0.3) +
+            sentiment_score +
+            (engagement_score * time_factor) +
+            depth_score +
+            linguistic_score
+        )
+        
+        # Ensure score is in 0-1 range
+        return max(0.0, min(1.0, combined_score))
 
 # Add missing functions for response time tracking
 def track_response_timestamp():
@@ -1739,7 +1960,7 @@ def regenerate_user_biography():
     """Force regeneration of the user biography for the current session."""
     success = digital_twin.update_user_biography(conversation_memory["messages"])
     if success:
-        return digital_twin.get_current_user_biography()
+        return {"status": "success", "biography": digital_twin.get_current_user_biography()}
     else:
         return {"status": "error", "message": "Failed to regenerate user biography"}
 
@@ -1868,7 +2089,7 @@ def generate_style_guidance_for_response(conversation_memory):
         guidance += "- Use complete sentences but keep them conversational\n"
     
     return guidance
-
+    
 if __name__ == "__main__":
     print(f"API Key exists: {os.environ.get('NEBIUS_API_KEY') is not None}")
     demo.launch(share=True)
