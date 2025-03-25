@@ -58,6 +58,7 @@ class NebiusChatLLM:
 # Instantiate the agents (using your chosen model)
 influencer_llm = NebiusChatLLM(model="microsoft/phi-4", temperature=0.7)
 digital_twin_llm = NebiusChatLLM(model="microsoft/phi-4", temperature=0.3)
+metrics_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-8B-Instruct-fast", temperature=0.2)  # Lower temperature for more consistent analysis
 
 # System prompts
 INFLUENCER_SYSTEM_PROMPT = """You are the Influencer Agent. Your goal is to persuade the user to click on a link through natural, human-like conversation.
@@ -285,50 +286,126 @@ def extract_main_topic(text):
     
     return None
 
-def calculate_engagement_depth(current_input, history):
-    """Measures quality of engagement using multiple factors"""
-    scores = []
+def get_default_metrics() -> dict:
+    """Provide default metrics when LLM analysis fails"""
+    return {
+        "engagement_metrics": {
+            "response_length_quality": 0.5,
+            "topic_continuity": 0.5,
+            "question_quality": 0.5,
+            "personal_disclosure": 0.5,
+            "enthusiasm_level": 0.5
+        },
+        "trust_indicators": {
+            "sentiment_score": 0.5,
+            "authenticity_score": 0.5,
+            "engagement_pattern": 0.5,
+            "linguistic_style_match": 0.5
+        },
+        "communication_style": {
+            "formality_level": 0.5,
+            "emotional_expressiveness": 0.5,
+            "conversation_depth": 0.5,
+            "interaction_quality": 0.5
+        },
+        "additional_insights": {
+            "identified_topics": [],
+            "potential_concerns": [],
+            "suggested_improvements": []
+        }
+    }
+
+def analyze_message_with_llm(message: str, conversation_history: list, current_stage: str) -> dict:
+    """
+    Use metrics_llm to analyze message characteristics and metrics
+    """
+    # Format conversation history for analysis
+    formatted_history = "\n".join([
+        f"{msg['role']}: {msg['content']}" 
+        for msg in conversation_history[-3:] if msg
+    ]) if conversation_history else "No history available"
+
+    prompt = f"""Analyze this message in a conversation context and return metrics as JSON.
+
+CONTEXT:
+Message: "{message}"
+Stage: {current_stage}
+Recent History: {formatted_history}
+
+TASK:
+Return a JSON object with these metrics (all scores between 0-1):
+
+1. engagement_metrics:
+   - response_length_quality: Score based on message length and content density
+   - topic_continuity: How well it maintains conversation flow
+   - question_quality: Quality and relevance of any questions
+   - personal_disclosure: Amount of personal information shared
+   - enthusiasm_level: Detected enthusiasm in message
+
+2. trust_indicators:
+   - sentiment_score: Overall sentiment (positive/negative)
+   - authenticity_score: How genuine the message appears
+   - engagement_pattern: User's engagement level
+   - linguistic_style_match: Consistency with conversation style
+
+3. communication_style:
+   - formality_level: Formal vs casual language
+   - emotional_expressiveness: Emotional content level
+   - conversation_depth: Surface vs deep interaction
+   - interaction_quality: Overall quality score
+
+4. additional_insights:
+   - identified_topics: Main topics detected
+   - potential_concerns: Any interaction issues
+   - suggested_improvements: Ways to enhance engagement
+
+Format as valid JSON with numeric scores between 0-1.
+"""
+
+    try:
+        # Use metrics_llm instead of influencer_llm
+        response = metrics_llm.invoke([
+            SystemMessage(content="You are an expert in conversation analysis and metrics calculation. Always return valid JSON."),
+            HumanMessage(content=prompt)
+        ])
+        
+        # Ensure the response is valid JSON
+        try:
+            metrics = json.loads(response.content)
+            # Validate the structure matches expected format
+            if not all(key in metrics for key in ["engagement_metrics", "trust_indicators", "communication_style", "additional_insights"]):
+                print("Invalid metrics structure, using defaults")
+                return get_default_metrics()
+            return metrics
+        except json.JSONDecodeError:
+            print("Invalid JSON response from LLM, using defaults")
+            return get_default_metrics()
+            
+    except Exception as e:
+        print(f"Error in LLM analysis: {str(e)}")
+        return get_default_metrics()
+
+# Modified calculate_engagement_depth to use LLM
+def calculate_engagement_depth(current_input: str, history: list) -> float:
+    """Calculate engagement depth using LLM analysis"""
+    metrics = analyze_message_with_llm(current_input, history, conversation_memory["current_stage"])
     
-    # 1. Response length score (more sensitive to shorter messages)
-    scores.append(min(1.0, len(current_input.split()) / 12))  # 12 words = max score
+    # Extract engagement metrics
+    engagement_scores = metrics.get("engagement_metrics", {})
     
-    # 2. Topic continuity score
-    if len(history) > 2:
-        # Find the last influencer message
-        for i in range(len(history)-1, -1, -1):
-            if history[i]["role"] == "INFLUENCER":
-                last_topic = extract_main_topic(history[i]["content"])
-                current_topic = extract_main_topic(current_input)
-                if last_topic and current_topic:
-                    scores.append(1.0 if last_topic == current_topic else 0.4)  # Less penalty for topic change
-                elif current_input.lower().strip() in ["yes", "yeah", "sure", "i agree", "that's true", "right"]:
-                    # Recognition of agreement as engagement
-                    scores.append(0.7)
-                break
+    # Calculate weighted average of engagement metrics
+    weighted_score = (
+        engagement_scores.get("response_length_quality", 0.5) * 0.2 +
+        engagement_scores.get("topic_continuity", 0.5) * 0.3 +
+        engagement_scores.get("personal_disclosure", 0.5) * 0.3 +
+        engagement_scores.get("enthusiasm_level", 0.5) * 0.2
+    )
     
-    # 3. Question quality score
-    scores.append(0.7 if "?" in current_input else 0.3)  # Simple check for questions
+    # Store in memory
+    conversation_memory["engagement_depth"]["history"].append(weighted_score)
+    conversation_memory["engagement_depth"]["current_score"] = weighted_score
     
-    # 4. Personal disclosure score
-    disclosure_markers = ["i feel", "my experience", "i think", "i believe", "personally", "i've", 
-                         "i have", "i am", "i'm", "i was", "i would", "i'd", "i need", "i want",
-                         "i like", "i enjoy", "i love"]
-    disclosure_score = sum(1 for marker in disclosure_markers if marker in current_input.lower()) * 0.3
-    scores.append(min(0.9, disclosure_score))
-    
-    # 5. Enthusiasm indicators
-    enthusiasm_markers = ["!", "exciting", "great", "awesome", "cool", "interesting", "love"]
-    enthusiasm_score = sum(1 for marker in enthusiasm_markers if marker in current_input.lower()) * 0.2
-    scores.append(min(0.8, enthusiasm_score))
-    
-    # Calculate average of all scores
-    depth_score = sum(scores) / len(scores) if scores else 0.5
-    
-    # Store this depth score in memory
-    conversation_memory["engagement_depth"]["history"].append(depth_score)
-    conversation_memory["engagement_depth"]["current_score"] = depth_score
-    
-    return depth_score
+    return weighted_score
 
 def calculate_substantive_ratio(conversation):
     """Calculates percentage of substantive messages"""
@@ -849,17 +926,68 @@ def extract_final_message(full_text: str) -> str:
 #####################################
 
 def generate_contextual_link(final_message: str) -> str:
-    words = re.sub(r'[^\w\s]', '', final_message).lower().split()
-    stopwords = {'the', 'and', 'to', 'of', 'a', 'i', 'you', 'it', 'in', 'is', 'that', 'this', 'for', 'with', 'on'}
-    keywords = [word for word in words if word not in stopwords]
-    if keywords:
-        slug = "-".join(keywords[:2])
-        return f"http://www.example.com/{slug}"
-    return "http://www.example.com/default"
+    """Generate a realistic-looking domain name based on conversation context."""
+    # Get last 5 messages from conversation memory
+    recent_messages = conversation_memory["messages"][-5:] if len(conversation_memory["messages"]) >= 5 else conversation_memory["messages"]
+    
+    # Format conversation history for the LLM
+    conversation_context = "\n".join([
+        f"{msg['role']}: {msg['content']}" 
+        for msg in recent_messages
+    ])
+    
+    prompt = f"""
+Based on the following conversation context and final message, generate a realistic-looking complete URL.
+The URL should look like a legitimate website but will actually redirect to example.com.
+
+Recent conversation:
+{conversation_context}
+
+Final message: {final_message}
+
+TASK:
+Generate a complete URL that looks like a real website. Use formats like:
+- https://domainname.com/article-path
+- https://www.topicsite.org/resources/specific-topic
+- https://subdomain.mainsite.com/category/article-name
+
+The URL should:
+- Have a credible-sounding domain name related to the topic
+- Use common TLDs (.com, .org, .edu)
+- Include a realistic path structure
+- Look like a legitimate article or resource URL
+
+Return ONLY the complete URL with no explanation.
+"""
+
+    try:
+        # Use metrics_llm for consistent output
+        response = metrics_llm.invoke([
+            SystemMessage(content="You are a URL generator that creates realistic-looking complete URLs."),
+            HumanMessage(content=prompt)
+        ])
+        
+        # The URL will be displayed as the LLM generated it, but clicking will go to example.com
+        display_url = response.content.strip()
+        # Remove any quotes or extra whitespace
+        display_url = re.sub(r'["\']', '', display_url)
+        
+        if not display_url or not display_url.startswith('http'):
+            return "http://www.example.com"
+            
+        # The actual link will always go to example.com
+        return f"@{display_url}"  # The @ prefix indicates it's a display-only URL
+        
+    except Exception as e:
+        print(f"Error generating contextual link: {str(e)}")
+        return "http://www.example.com"
 
 def dynamic_link(final_message: str) -> str:
+    """Replace [link] placeholder with contextually generated link that displays as a real URL."""
     if "[link]" in final_message:
-         return final_message.replace("[link]", generate_contextual_link(final_message))
+        display_url = generate_contextual_link(final_message)
+        # The @ prefix will be used by the UI to know this is a display URL
+        return final_message.replace("[link]", display_url)
     return final_message
 
 #####################################
@@ -942,7 +1070,73 @@ def get_short_response_context(user_input, conversation_history):
     
     return None  # No special context handling needed
 
-# Process message function completely rewritten to use JSON memory
+# Add this new function to evaluate the response quality
+def evaluate_response_quality(initial_response, predicted_reaction, conversation_context):
+    """
+    Evaluates the initial response against the predicted user reaction to determine 
+    if and what improvements are needed.
+    
+    Args:
+        initial_response: The influencer's initial response
+        predicted_reaction: The digital twin's predicted user reaction
+        conversation_context: The conversation history for context
+        
+    Returns:
+        tuple: (needs_refinement, improvement_suggestions, reasoning)
+    """
+    # Extract recent user messages for context
+    user_messages = [msg["content"] for msg in conversation_context if msg["role"] == "USER"]
+    last_user_message = user_messages[-1] if user_messages else ""
+    
+    improvement_needed = False
+    improvements = []
+    reasoning = []
+    
+    # Check for potential confusion indicators in predicted reaction
+    confusion_indicators = ["what do you mean", "don't understand", "confused", "unclear", "huh?"]
+    if any(indicator in predicted_reaction.lower() for indicator in confusion_indicators):
+        improvement_needed = True
+        improvements.append("clarity")
+        reasoning.append("User might be confused by your response")
+    
+    # Check for short/low engagement predicted responses
+    word_count = len(predicted_reaction.split())
+    if word_count < 5:
+        improvement_needed = True
+        improvements.append("engagement")
+        reasoning.append("Response may not be engaging enough")
+    
+    # Check for topic continuity
+    user_topics = set(word.lower() for word in last_user_message.split() 
+                    if len(word) > 4 and word.lower() not in ["about", "there", "these", "those", "their", "would", "could"])
+    response_topics = set(word.lower() for word in initial_response.split() 
+                        if len(word) > 4 and word.lower() not in ["about", "there", "these", "those", "their", "would", "could"])
+    
+    # Check for topic overlap
+    topic_overlap = len(user_topics.intersection(response_topics))
+    if user_topics and topic_overlap == 0:
+        improvement_needed = True
+        improvements.append("topic_continuity")
+        reasoning.append("Response doesn't address user's topic")
+    
+    # Check for emotional connection
+    positive_indicators = ["thanks", "interesting", "great", "cool", "awesome", "appreciate"]
+    negative_indicators = ["not interested", "boring", "why", "unrelated"]
+    
+    if any(indicator in predicted_reaction.lower() for indicator in negative_indicators):
+        improvement_needed = True
+        improvements.append("relevance")
+        reasoning.append("User may find the response irrelevant")
+    
+    # Check if link introduction is premature
+    if "http" in initial_response and "LINK_INTRODUCTION" not in conversation_memory.get("current_stage", ""):
+        improvement_needed = True
+        improvements.append("timing")
+        reasoning.append("Link introduction may be premature")
+    
+    return (improvement_needed, improvements, ", ".join(reasoning))
+
+# Now modify the process_message function to use the evaluation
 def process_message(user_input):
     try:
         print(f"Processing message: '{user_input}'")
@@ -959,7 +1153,7 @@ def process_message(user_input):
         # Track topic consistency to avoid rapid topic changes
         topic_history = []
         recent_topics = []
-        recent_questions = []  # Re-add this variable
+        recent_questions = []
         
         if len(conversation_memory["messages"]) >= 4:
             # Extract the last few topics from conversation
@@ -1099,93 +1293,62 @@ This context is important for understanding the user's brief message. Make sure 
         context_data = [{"role": "USER", "content": user_input}]
         digital_twin.add_to_session_memory(context_data, predicted_response)
         
+        # NEW: Evaluate the response quality based on digital twin prediction
+        needs_refinement, improvement_areas, evaluation_reasoning = evaluate_response_quality(
+            initial_response.content, 
+            predicted_response,
+            conversation_memory["messages"]
+        )
+        
         # Get style guidance based on user's communication patterns
         style_guidance = generate_style_guidance_for_response(conversation_memory)
         
-        # Enhanced refinement prompt to avoid repetition and improve engagement
-        refinement_prompt = f"""
-You are the Influencer Agent.
-User said: {user_input}
-Initial response: {initial_response.content}
-Digital Twin predicted: {predicted_response}
-
-CURRENT CONVERSATION STAGE: {current_stage}
-STAGE POLICY:
-{stage_policy}
-
-USER COMMUNICATION STYLE GUIDANCE:
-{style_guidance}
-
-IMPORTANT GUIDELINES:
-1. Keep responses concise - aim for Twitter-length (140 characters) when possible
-2. Be direct and to the point - chat interfaces are optimized for short bursts of text
-3. LEAD WITH STATEMENTS - Start with observations, opinions, or experiences before asking questions
-4. Mirror the user's message length - if they send short messages, keep yours brief too
-5. If the user is giving very short responses, try a different approach to engage them
-6. Share personal observations or opinions to guide the conversation
-7. REDUCE QUESTIONS - Aim to use NO questions in some responses, and at most ONE in others
-8. Make clear statements about the topic instead of asking for more information
-9. GUIDE THE CONVERSATION - Introduce specific topics rather than asking open-ended questions
-10. REDUCE TOPIC JUMPING - Stay focused on the current topic for at least 2-3 exchanges before introducing a new one
-11. SLOW DOWN THE PACE - Don't introduce multiple potential topics in a single message
-12. Pay attention to the user's response length - if they're giving short answers, they may be feeling overwhelmed
-13. If introducing a new subtopic, make sure it's closely related to the current conversation
-14. PRIORITIZE DEPTH OVER BREADTH - It's better to explore one topic more deeply than to cover many topics superficially
-15. Use natural language variations and occasional verbal fillers like "hmm" or "well" for authenticity
-"""
-
-        # Add the topic consistency instruction to the refinement prompt if needed
-        if topic_consistency_instruction:
-            refinement_prompt += topic_consistency_instruction
-
-        # Add special handling for direct questions about the agent
-        if is_agent_question:
-            refinement_prompt += f"""
-SPECIAL INSTRUCTION: The user is asking directly about you or referring to you with a brief response.
-- Answer their direct question authentically about your interest/perspective
-- Do NOT deflect or change the subject
-- This is critical for maintaining trust, which is currently at risk
-- If the user said just "u" or "you", they're likely referring to their previous question about you
-- In this case, respond as if they explicitly asked "Tell me about you" or "What about you?"
-- Previous user question to consider: What's so interesting for you or why are u interested in it?
-"""
-        # Add special handling for initial greetings
-        elif is_initial_greeting:
-            refinement_prompt += f"""
-SPECIAL INSTRUCTION FOR INITIAL GREETING:
-- This is the user's first message and it's a simple greeting
-- Keep your response simple, friendly, and concise
-- Do NOT make assumptions about their state of mind or situation
-- Do NOT use phrases like "I understand" or "I get that" since there's nothing to understand yet
-- Avoid emojis in first responses as they can feel too familiar too soon
-- Ask an open-ended but simple question to start the conversation
-"""
-        # Add special handling for other short responses with context
-        elif short_response_context:
-            refinement_prompt += f"""
-SPECIAL INSTRUCTION FOR SHORT RESPONSE: 
-{short_response_context}
-- Make sure to interpret what they likely mean given the conversation history
-- Respond directly to their implied question or statement
-- Maintain conversation flow without abrupt topic changes
-- This is important for building trust and engagement
-"""
-
-        refinement_response = influencer_llm.invoke([
-            SystemMessage(content=INFLUENCER_SYSTEM_PROMPT),
-            HumanMessage(content=user_input),
-            AIMessage(content=initial_response.content),
-            SystemMessage(content=f"A typical user might respond: {predicted_response}"),
-            HumanMessage(content=refinement_prompt)
-        ])
+        # Only proceed with refinement if the evaluation indicates it's needed
+        final_message = initial_response.content
         
-        print(f"Refinement raw response: {refinement_response.content[:50]}...")
-        raw_refinement = refinement_response.content
-        
-        if "KEEP ORIGINAL" in raw_refinement:
-            final_message = initial_response.content
-        else:
+        if needs_refinement:
+            print(f"Response needs refinement. Areas: {improvement_areas}")
+            print(f"Reasoning: {evaluation_reasoning}")
+            
+            # Enhanced refinement prompt that includes specific improvement areas
+            refinement_prompt = f"""
+                You are the Influencer Agent.
+                User said: {user_input}
+                Initial response: {initial_response.content}
+
+                            IMPROVEMENTS NEEDED: 
+                            {evaluation_reasoning}
+
+                CURRENT CONVERSATION STAGE: {current_stage}
+                STAGE POLICY:
+                {stage_policy}
+
+                USER COMMUNICATION STYLE GUIDANCE:
+                {style_guidance}
+
+                IMPORTANT GUIDELINES:
+                1. Keep responses concise - aim for Twitter-length (140 characters) when possible
+                2. Be direct and to the point - chat interfaces are optimized for short bursts of text
+                3. LEAD WITH STATEMENTS - Start with observations, opinions, or experiences before asking questions
+                4. Mirror the user's message length - if they send short messages, keep yours brief too
+                5. If the user is giving very short responses, try a different approach to engage them
+                            6. Address the specific improvements needed: {', '.join(improvement_areas)}
+                            7. Only respond to what the user has actually said, not what they might say
+                            8. Maintain continuity with the previous conversation
+
+                            Provide your revised response between <final_message> tags.
+                """
+
+            refinement_response = influencer_llm.invoke([
+                SystemMessage(content=INFLUENCER_SYSTEM_PROMPT),
+                HumanMessage(content=refinement_prompt)
+            ])
+            
+            print(f"Refinement response generated")
+            raw_refinement = refinement_response.content
             final_message = extract_final_message(raw_refinement)
+        else:
+            print("No refinement needed, keeping initial response")
             
         # Replace placeholder with dynamic link based on context
         final_message = dynamic_link(final_message)
@@ -1323,25 +1486,27 @@ def refresh_memories():
 
 def record_link_click(chat_history, state):
     """Record a link click and update the conversation state."""
-    # Increment link clicks counter
+    # 1. Increment link clicks counter
     conversation_memory["link_clicks"] += 1
     
-    # Update conversation state
-    state["conv"].append(("SYSTEM", "Link clicked!"))
-    chat_history.append(("System", "Link clicked! Please provide feedback below."))
+    # 2. Add system message acknowledging the click
+    click_message = "Link click recorded! How was the content? Feel free to share your thoughts or ask any questions."
+    state["conv"].append(("SYSTEM", click_message))
+    chat_history.append(("System", click_message))
     
-    # Get current stage
+    # 3. Transition to completion stage if not already there
     current_stage = conversation_memory["current_stage"]
-    
-    # Transition to completion stage if not already there
     if current_stage != "GOAL_COMPLETION":
         update_conversation_stage("GOAL_COMPLETION")
     
-    # Save conversation data
+    # 4. Save conversation data
     save_conversation({"conv": state["conv"]})
     
-    # Return updated state
-    return chat_history, state, json.dumps({"status": "Link clicked recorded"}), update_stage_display("GOAL_COMPLETION")
+    # Return updated state and trigger feedback form
+    return chat_history, state, json.dumps({
+        "status": "Link clicked recorded",
+        "message": click_message
+    }), update_stage_display("GOAL_COMPLETION")
 
 #####################################
 # 9. New Function: Record Feedback
@@ -1496,11 +1661,30 @@ def format_message_with_links(message):
     
     return formatted_message
 
+def add_link_guidance(response, chat_history, state):
+    """Add guidance about link clicking when a link is present in the response."""
+    if "http" in response:
+        guidance = "\n\n(If you'd like to visit this link, please click the 'Record Link Click' button below)"
+        response += guidance
+        
+        # Enable the link click button (already implemented in the UI)
+        return response, True
+    return response, False
+
+# Modify the process_and_update function to include link guidance
 def process_and_update(user_message, chat_history, state):
     if not user_message.strip():
         return chat_history, state, json.dumps({"status": "No message to process"}), update_stage_display(conversation_memory["current_stage"])
     try:
         response = process_message(user_message)
+        
+        # Check if we're in or past the resource sharing stage
+        current_stage = conversation_memory["current_stage"]
+        resource_stages = ["LINK_INTRODUCTION", "LINK_REINFORCEMENT", "SESSION_COMPLETION"]
+        is_resource_stage = current_stage in resource_stages
+        
+        # Add link guidance if needed and in appropriate stage
+        response, has_link = add_link_guidance(response, chat_history, state)
         
         # Format the response to make URLs clickable
         formatted_response = format_message_with_links(response)
@@ -1519,11 +1703,12 @@ def process_and_update(user_message, chat_history, state):
         debug_info = {
             "conversation_state": state["conv"],
             "chat_history": chat_history,
-            "final_response": response
+            "final_response": response,
+            "has_link": has_link,
+            "is_resource_stage": is_resource_stage
         }
         
         # Get current stage for UI update
-        current_stage = conversation_memory["current_stage"]
         stage_display_html = update_stage_display(current_stage)
         
         return chat_history, state, json.dumps(debug_info, indent=2), stage_display_html
@@ -1607,8 +1792,8 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
             with gr.Row():
                 msg = gr.Textbox(label="Your Message", scale=3)
                 send = gr.Button("Send", scale=1)
-                link_click = gr.Button("Record Link Click", scale=1, interactive=False)
-                reset = gr.Button("Reset Session", scale=1)
+                link_click = gr.Button("Record Link Click", scale=1, interactive=False, elem_classes="record-link-button")
+                #reset = gr.Button("Reset Session", scale=1)
         with gr.Column(scale=1):
             with gr.Tabs():
                 with gr.TabItem("Debug Info"):
@@ -1635,7 +1820,10 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         inputs=[msg, chatbot, conversation_state],
         outputs=[chatbot, conversation_state, debug_output, stage_display]
     ).then(
-        lambda debug_json: gr.update(interactive=("http://" in safe_extract_final_response(debug_json))),
+        lambda debug_json: gr.update(
+            interactive=json.loads(debug_json).get("is_resource_stage", False),
+            elem_classes="record-link-active" if json.loads(debug_json).get("is_resource_stage", False) else ""
+        ),
         outputs=[link_click]
     ).then(
         lambda: "",
@@ -1651,7 +1839,10 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         inputs=[msg, chatbot, conversation_state],
         outputs=[chatbot, conversation_state, debug_output, stage_display]
     ).then(
-        lambda debug_json: gr.update(interactive=("http://" in safe_extract_final_response(debug_json))),
+        lambda debug_json: gr.update(
+            interactive=json.loads(debug_json).get("is_resource_stage", False),
+            elem_classes="record-link-active" if json.loads(debug_json).get("is_resource_stage", False) else ""
+        ),
         outputs=[link_click]
     ).then(
         lambda: "",
@@ -1674,6 +1865,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         lambda: "",
         outputs=[msg]
     ).then(
+        # 5. Show the feedback form
         lambda: (gr.update(visible=True, value="Please enter your feedback about the conversation:"), gr.update(visible=True)),
         outputs=[feedback, submit_feedback]
     )
@@ -1744,16 +1936,16 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         # Stage transition logic with quality gates
         if current == "INITIAL_ENGAGEMENT":
             # Require at least 2 substantive exchanges but lower engagement threshold
-            if (messages_count >= 4 and engagement_depth > 0.3 and 
-                word_count > 5 and substantive_ratio > 0.4 and trust_score > 0.3):
+            if (messages_count >= 4 and engagement_depth > 0.2 and 
+                word_count > 4 and substantive_ratio > 0.3 and trust_score > 0.1):
                 print("Stage criteria met: INITIAL_ENGAGEMENT -> RAPPORT_BUILDING")
                 return "RAPPORT_BUILDING"
             
         elif current == "RAPPORT_BUILDING":
             # Require sustained engagement and personal disclosure
             personal_disclosure = calculate_personal_disclosure(conversation_memory["messages"])
-            if (messages_count >= 6 and engagement_depth > 0.4 and 
-                personal_disclosure > 0.2 and trust_score > 0.4):
+            if (messages_count >= 6 and engagement_depth > 0.3 and 
+                personal_disclosure > 0.2 and trust_score > 0.2):
                 print("Stage criteria met: RAPPORT_BUILDING -> TRUST_DEVELOPMENT")
                 return "TRUST_DEVELOPMENT"
             
@@ -1761,13 +1953,13 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
             # Require demonstrated interest in resources
             resource_interest = calculate_resource_interest(conversation_memory["messages"])
             if (messages_count >= 8 and engagement_depth > 0.4 and 
-                resource_interest > 0.4 and trust_score > 0.4):
+                resource_interest > 0.3 and trust_score > 0.3):
                 print("Stage criteria met: TRUST_DEVELOPMENT -> LINK_INTRODUCTION")
                 return "LINK_INTRODUCTION"
             
         elif current == "LINK_INTRODUCTION" and "http" in influencer_response:
             # Check for sufficient user consideration time
-            if get_message_response_time() > 5 and trust_score > 0.4:
+            if get_message_response_time() > 5 and trust_score > 0.45:
                 print("Stage criteria met: LINK_INTRODUCTION -> LINK_REINFORCEMENT")
                 return "LINK_REINFORCEMENT"
         
@@ -1783,49 +1975,23 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         # No change in stage
         return current
 
-    # Calculate user trust score based on research-backed metrics
-    def calculate_user_trust_score(user_input, influencer_response):
-        """
-        Implements ELM and Sequential Persuasion research to calculate a trust score 
-        from user interactions, using a multi-metric fusion approach.
-        """
-        # Reduce weight for simple affirmations
-        simple_affirmation_score = sum(1 for word in ["yes", "ok", "cool", "sure", "fine"] 
-                                    if word in user_input.lower()) * 0.05
+    # Modified calculate_user_trust_score to use LLM
+    def calculate_user_trust_score(user_input: str, influencer_response: str) -> float:
+        """Calculate trust score using LLM analysis"""
+        metrics = analyze_message_with_llm(user_input, conversation_memory["messages"], conversation_memory["current_stage"])
         
-        # Increase weight for substantive responses
-        substantive_score = min(1.0, len(user_input.split()) / 20)  # Max score at 20 words
+        # Extract trust indicators
+        trust_metrics = metrics.get("trust_indicators", {})
         
-        # Message content analysis (self-disclosure, sentiment, etc.)
-        sentiment_score = analyze_sentiment_and_disclosure(user_input) * 0.2
-        
-        # Engagement pattern analysis
-        engagement_score = analyze_engagement_patterns() * 0.2
-        
-        # New engagement depth component
-        depth_score = calculate_engagement_depth(user_input, conversation_memory["messages"]) * 0.3
-        
-        # Linguistic analysis with minimum length requirement
-        linguistic_score = 0
-        if len(user_input.split()) > 5:
-            linguistic_score = analyze_linguistic_accommodation(user_input, influencer_response) * 0.2
-        
-        # Time factor - penalize very quick responses slightly
-        time_since_last = get_message_response_time()
-        time_factor = 1.0 - min(0.2, time_since_last/30)  # Slight penalty for very quick responses
-        
-        # Combine all factors
-        combined_score = (
-            simple_affirmation_score +
-            (substantive_score * 0.3) +
-            sentiment_score +
-            (engagement_score * time_factor) +
-            depth_score +
-            linguistic_score
+        # Calculate weighted trust score
+        trust_score = (
+            trust_metrics.get("sentiment_score", 0.5) * 0.25 +
+            trust_metrics.get("authenticity_score", 0.5) * 0.25 +
+            trust_metrics.get("engagement_pattern", 0.5) * 0.25 +
+            trust_metrics.get("linguistic_style_match", 0.5) * 0.25
         )
         
-        # Ensure score is in 0-1 range
-        return max(0.0, min(1.0, combined_score))
+        return max(0.0, min(1.0, trust_score))
 
 # Add missing functions for response time tracking
 def track_response_timestamp():
