@@ -7,6 +7,7 @@ from typing import List, Any, Dict
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from openai import OpenAI
 import time
+import random
 
 #####################################
 # 1. Define the custom LLM wrapper  #
@@ -254,37 +255,32 @@ def analyze_response_timing():
     return timing_score
 
 def extract_main_topic(text):
-    """Extract the main topic from a message to track conversation themes.
-    Returns a simplified topic or None if can't be determined."""
+    """Extract the main topic from a message to track conversation themes."""
     if not text or len(text) < 10:
-        return None
+        return "general"  # Default to a general topic if none found
         
     # Simple topic extraction based on key phrases and question patterns
     if "?" in text:
-        # Extract question topics
         question_match = re.search(r'(?:what|how|why|when|where|who|tell me about|do you)\s+(?:is|are|was|were|do|does|did|can|could|would|should)?\s*(.+?)\?', text.lower())
         if question_match:
             topic = question_match.group(1).strip()
-            # Truncate long topics and remove articles
             topic = re.sub(r'^(the|a|an)\s+', '', topic)
             words = topic.split()
             if len(words) > 4:
                 topic = ' '.join(words[:4]) + '...'
             return topic
     
-    # Extract statement topics (simplified)
     sentences = re.split(r'[.!?]', text)
     if sentences:
         main_sentence = max(sentences, key=len).strip()
         if len(main_sentence) > 10:
-            # Simple heuristic: first 5-6 words often contain the topic
             words = main_sentence.split()
             if len(words) > 6:
                 topic = ' '.join(words[:6]) + '...'
                 return topic
             return main_sentence[:40] + ('...' if len(main_sentence) > 40 else '')
     
-    return None
+    return "general"  # Default to a general topic if none found
 
 def get_default_metrics() -> dict:
     """Provide default metrics when LLM analysis fails"""
@@ -359,26 +355,43 @@ Return a JSON object with these metrics (all scores between 0-1):
    - potential_concerns: Any interaction issues
    - suggested_improvements: Ways to enhance engagement
 
-Format as valid JSON with numeric scores between 0-1.
+IMPORTANT: Return ONLY valid JSON with numeric scores between 0-1. Do not include any explanatory text or markdown formatting.
 """
 
     try:
         # Use metrics_llm instead of influencer_llm
         response = metrics_llm.invoke([
-            SystemMessage(content="You are an expert in conversation analysis and metrics calculation. Always return valid JSON."),
+            SystemMessage(content="You are an expert in conversation analysis and metrics calculation. Always return valid JSON with numeric scores between 0-1."),
             HumanMessage(content=prompt)
         ])
         
-        # Ensure the response is valid JSON
+        # Clean the response to ensure it's valid JSON
+        cleaned_response = response.content.strip()
+        
+        # Remove any markdown code block markers if present
+        cleaned_response = re.sub(r'```json\s*|\s*```', '', cleaned_response)
+        
+        # Try to parse the JSON
         try:
-            metrics = json.loads(response.content)
+            metrics = json.loads(cleaned_response)
+            
             # Validate the structure matches expected format
-            if not all(key in metrics for key in ["engagement_metrics", "trust_indicators", "communication_style", "additional_insights"]):
+            required_keys = ["engagement_metrics", "trust_indicators", "communication_style", "additional_insights"]
+            if not all(key in metrics for key in required_keys):
                 print("Invalid metrics structure, using defaults")
                 return get_default_metrics()
+                
+            # Validate all scores are numeric and between 0-1
+            for category in required_keys:
+                for key, value in metrics[category].items():
+                    if not isinstance(value, (int, float)) or value < 0 or value > 1:
+                        metrics[category][key] = 0.5  # Default to neutral score
+                        
             return metrics
-        except json.JSONDecodeError:
-            print("Invalid JSON response from LLM, using defaults")
+            
+        except json.JSONDecodeError as e:
+            print(f"JSON parsing error: {str(e)}")
+            print(f"Raw response: {cleaned_response}")
             return get_default_metrics()
             
     except Exception as e:
@@ -408,96 +421,105 @@ def calculate_engagement_depth(current_input: str, history: list) -> float:
     return weighted_score
 
 def calculate_substantive_ratio(conversation):
-    """Calculates percentage of substantive messages"""
-    if len(conversation) < 4:
-        return 0.5  # Neutral default
-    
-    substantive_count = 0
-    user_msgs = [msg for msg in conversation if msg["role"] == "USER"]
-    
-    # Only analyze last 4 user messages at most
-    for msg in user_msgs[-4:]:
-        # Check message length
-        if len(msg["content"].split()) > 6:
-            substantive_count += 1
-        # Check question words
-        if any(w in msg["content"].lower() for w in ["why", "how", "explain"]):
-            substantive_count += 0.5
-        # Check for expressions of interest
-        if any(w in msg["content"].lower() for w in ["interesting", "tell me more", "curious"]):
-            substantive_count += 0.5
-    
-    # Update substantive count in memory
-    conversation_memory["engagement_depth"]["substantive_count"] = substantive_count
-    
-    return min(1.0, substantive_count / max(1, len(user_msgs[-4:])))
+    """Calculates the substantive ratio using metrics LLM."""
+    # Prepare the conversation history for analysis
+    formatted_history = "\n".join([msg["content"] for msg in conversation[-4:] if msg["role"] == "USER"])
+
+    # Create a prompt for the metrics LLM
+    prompt = f"""
+    Analyze the following conversation messages and determine the substantive ratio.
+    Provide a score between 0 and 1 based on the depth and quality of the messages.
+
+    CONTEXT:
+    Conversation History: {formatted_history}
+
+    TASK:
+    Return a JSON object with the substantive ratio score.
+    """
+
+    # Invoke the metrics LLM with the prompt
+    response = metrics_llm.invoke([SystemMessage(content="You are an expert in conversation analysis."),
+                                   HumanMessage(content=prompt)])
+
+    # Extract the substantive ratio score from the response
+    substantive_ratio = json.loads(response.content).get("substantive_ratio", 0.5)
+
+    return substantive_ratio
 
 def analyze_linguistic_engagement(text):
-    """Analyzes linguistic markers of real engagement"""
-    markers = {
-        "elaboration": ["because", "therefore", "however", "example", "since"],
-        "curiosity": ["interesting", "curious", "wonder", "explain", "tell me"],
-        "experience": ["experience", "happened", "occurred", "story", "remember"],
-        "opinion": ["think", "feel", "believe", "opinion", "perspective"]
-    }
-    
-    score = 0
-    text_lower = text.lower()
-    for category, terms in markers.items():
-        if any(term in text_lower for term in terms):
-            score += 0.3
-    
-    return min(1.0, score)
+    """Analyze linguistic engagement using metrics LLM."""
+    # Create a prompt for the metrics LLM
+    prompt = f"""
+    Analyze the following message for linguistic engagement.
+    Provide metrics on engagement quality, emotional expressiveness, and conversational depth.
+
+    CONTEXT:
+    Message: "{text}"
+
+    TASK:
+    Return a JSON object with engagement metrics.
+    """
+
+    # Invoke the metrics LLM with the prompt
+    response = metrics_llm.invoke([SystemMessage(content="You are an expert in linguistic engagement analysis."),
+                                   HumanMessage(content=prompt)])
+
+    # Extract engagement metrics from the response
+    engagement_metrics = json.loads(response.content)
+
+    return engagement_metrics
 
 def calculate_personal_disclosure(conversation):
-    """Measures how much personal information the user has shared"""
-    if len(conversation) < 3:
-        return 0.3  # Default for short conversations
-    
-    user_msgs = [msg["content"] for msg in conversation if msg["role"] == "USER"]
-    
-    # Look for first-person pronouns and personal context markers
-    personal_markers = ["i ", "me", "my", "mine", "myself", "we", "our", "us"]
-    disclosure_markers = ["feel", "think", "believe", "experience", "work", "life", "friend", 
-                         "family", "job", "school", "home", "live", "grew up", "childhood", 
-                         "enjoy", "like", "love", "hate", "prefer", "usually", "always", "never"]
-    
-    # Calculate personal pronoun density
-    personal_count = 0
-    for msg in user_msgs:
-        personal_count += sum(1 for marker in personal_markers if f" {marker} " in f" {msg.lower()} ")
-    
-    # Calculate disclosure marker density
-    disclosure_count = 0
-    for msg in user_msgs:
-        disclosure_count += sum(1 for marker in disclosure_markers if marker in msg.lower())
-    
-    # Normalize by message count and combine scores
-    if len(user_msgs) > 0:
-        personal_score = min(1.0, personal_count / (len(user_msgs) * 2))
-        disclosure_score = min(1.0, disclosure_count / (len(user_msgs) * 1.5))  # More sensitive
-        return (personal_score * 0.6) + (disclosure_score * 0.4)
-    
-    return 0.3
+    """Calculates personal disclosure using metrics LLM."""
+    # Prepare the conversation history for analysis
+    formatted_history = "\n".join([msg["content"] for msg in conversation[-3:] if msg["role"] == "USER"])
+
+    # Create a prompt for the metrics LLM
+    prompt = f"""
+    Analyze the following conversation messages to assess personal disclosure.
+    Provide a score between 0 and 1 based on the amount of personal information shared.
+
+    CONTEXT:
+    Conversation History: {formatted_history}
+
+    TASK:
+    Return a JSON object with the personal disclosure score.
+    """
+
+    # Invoke the metrics LLM with the prompt
+    response = metrics_llm.invoke([SystemMessage(content="You are an expert in personal disclosure analysis."),
+                                   HumanMessage(content=prompt)])
+
+    # Extract the personal disclosure score from the response
+    personal_disclosure_score = json.loads(response.content).get("personal_disclosure", 0.5)
+
+    return personal_disclosure_score
 
 def calculate_resource_interest(conversation):
-    """Measures user's expressed interest in resources or links"""
-    if len(conversation) < 4:
-        return 0.3
-    
-    # Only look at user messages
-    user_msgs = [msg["content"].lower() for msg in conversation if msg["role"] == "USER"]
-    
-    # Resource interest markers
-    interest_markers = ["resource", "link", "article", "share", "send", "show me", 
-                       "where can i", "is there a", "do you have", "can you recommend"]
-    
-    # Count instances in recent messages (last 3)
-    interest_count = 0
-    for msg in user_msgs[-3:]:
-        interest_count += sum(1 for marker in interest_markers if marker in msg)
-    
-    return min(1.0, interest_count * 0.4 + 0.3)
+    """Calculates resource interest using metrics LLM."""
+    # Prepare the conversation history for analysis
+    formatted_history = "\n".join([msg["content"] for msg in conversation[-4:] if msg["role"] == "USER"])
+
+    # Create a prompt for the metrics LLM
+    prompt = f"""
+    Analyze the following conversation messages to determine resource interest.
+    Provide a score between 0 and 1 based on the expressed interest in resources.
+
+    CONTEXT:
+    Conversation History: {formatted_history}
+
+    TASK:
+    Return a JSON object with the resource interest score.
+    """
+
+    # Invoke the metrics LLM with the prompt
+    response = metrics_llm.invoke([SystemMessage(content="You are an expert in resource interest analysis."),
+                                   HumanMessage(content=prompt)])
+
+    # Extract the resource interest score from the response
+    resource_interest_score = json.loads(response.content).get("resource_interest", 0.5)
+
+    return resource_interest_score
 
 def previous_stage(current):
     """Returns the previous conversation stage."""
@@ -925,67 +947,125 @@ def extract_final_message(full_text: str) -> str:
 # 5A. Helper: Dynamic Link Replacement
 #####################################
 
-def generate_contextual_link(final_message: str) -> str:
-    """Generate a realistic-looking domain name based on conversation context."""
-    # Get last 5 messages from conversation memory
-    recent_messages = conversation_memory["messages"][-5:] if len(conversation_memory["messages"]) >= 5 else conversation_memory["messages"]
-    
-    # Format conversation history for the LLM
-    conversation_context = "\n".join([
-        f"{msg['role']}: {msg['content']}" 
-        for msg in recent_messages
-    ])
-    
-    prompt = f"""
-Based on the following conversation context and final message, generate a realistic-looking complete URL.
-The URL should look like a legitimate website but will actually redirect to example.com.
+def generate_contextual_link(final_message: str, conversation_history: list) -> str:
+    """
+    Generate a contextually relevant YouTube URL based on deep understanding of the conversation
+    without enforcing any predefined patterns.
+    """
+    try:
+        # Format recent conversation for analysis, use more history for better context
+        recent_messages = conversation_history[-10:] if len(conversation_history) >= 10 else conversation_history
+        formatted_history = "\n".join([
+            f"{msg['role']}: {msg['content']}" 
+            for msg in recent_messages
+        ])
+        
+        print("Generating creative contextual link based on deep conversation understanding...")
+        
+        # Use metrics_llm to analyze and generate contextual link with creative freedom
+        prompt = f"""Analyze this conversation deeply and create a YouTube URL path that captures the essence of what would be most valuable to the user based on this specific exchange.
 
-Recent conversation:
-{conversation_context}
-
-Final message: {final_message}
+CONVERSATION:
+{formatted_history}
 
 TASK:
-Generate a complete URL that looks like a real website. Use formats like:
-- https://domainname.com/article-path
-- https://www.topicsite.org/resources/specific-topic
-- https://subdomain.mainsite.com/category/article-name
+1. Deeply understand the core concepts, interests, needs, and context in this conversation
+2. Identify the most valuable resource that would genuinely help this specific user
+3. Create a YouTube URL path that represents this valuable resource
+4. The path should feel authentic, memorable, and instantly recognizable to what the user would find valuable
+5. Return your analysis in JSON format with this structure:
 
-The URL should:
-- Have a credible-sounding domain name related to the topic
-- Use common TLDs (.com, .org, .edu)
-- Include a realistic path structure
-- Look like a legitimate article or resource URL
+{{
+    "conversation_summary": "brief understanding of the key themes and user needs",
+    "identified_core_needs": ["need1", "need2"],
+    "conceptual_resource": "description of the ideal resource for this user",
+    "url_path": "your-creative-youtube-path",
+    "rationale": "why this would be valuable to this specific user"
+}}
 
-Return ONLY the complete URL with no explanation.
+IMPORTANT GUIDELINES:
+- You have complete creative freedom to craft any URL path you think is best
+- Don't follow any pre-defined patterns - let your understanding guide you
+- Create something that feels authentic - like a real YouTube channel or video would use
+- URL should be concise but specific, meaningful, and memorable
+- Focus on what would genuinely help this specific user in their current situation
+- The URL should feel instantly valuable and relevant when the user sees it
+- Use your full knowledge to create something that would resonate with experts in that topic area
+
+IMPORTANT: Return ONLY valid JSON without any explanatory text or markdown formatting.
 """
 
-    try:
-        # Use metrics_llm for consistent output
+        # Use metrics_llm with higher temperature for more creative outputs
         response = metrics_llm.invoke([
-            SystemMessage(content="You are a URL generator that creates realistic-looking complete URLs."),
+            SystemMessage(content="You are an expert at deeply understanding conversations and identifying the perfect resources. You have complete creative freedom."),
             HumanMessage(content=prompt)
         ])
         
-        # The URL will be displayed as the LLM generated it, but clicking will go to example.com
-        display_url = response.content.strip()
-        # Remove any quotes or extra whitespace
-        display_url = re.sub(r'["\']', '', display_url)
+        # Clean and parse the response
+        cleaned_response = response.content.strip()
+        cleaned_response = re.sub(r'```json\s*|\s*```', '', cleaned_response)
         
-        if not display_url or not display_url.startswith('http'):
-            return "http://www.example.com"
+        try:
+            result = json.loads(cleaned_response)
             
-        # The actual link will always go to example.com
-        return f"@{display_url}"  # The @ prefix indicates it's a display-only URL
-        
+            # Extract the URL path
+            url_path = result.get("url_path", "")
+            
+            # Handle empty or invalid paths
+            if not url_path or not isinstance(url_path, str):
+                # Generate a path based on the identified needs
+                core_needs = result.get("identified_core_needs", ["meaningful-content"])
+                if core_needs and isinstance(core_needs, list) and len(core_needs) > 0:
+                    # Use the first identified need as the basis for a URL
+                    need_slug = core_needs[0].replace(" ", "-").lower()
+                    unique_id = str(int(time.time()))[-3:]
+                    url_path = f"{need_slug}-insights-{unique_id}"
+                else:
+                    # Fallback with timestamp
+                    unique_id = str(int(time.time()))[-5:]
+                    url_path = f"personalized-resource-{unique_id}"
+            
+            # Ensure URL is properly formatted (no need for youtube.com/ prefix)
+            url_path = url_path.replace("https://", "").replace("http://", "").replace("www.", "")
+            if url_path.startswith("youtube.com/"):
+                url_path = url_path[len("youtube.com/"):]
+            
+            # Log the results
+            print(f"Generated URL path: {url_path}")
+            print(f"Based on understanding: {result.get('conversation_summary', 'No summary provided')}")
+            print(f"Conceptual resource: {result.get('conceptual_resource', 'No concept provided')}")
+            
+            # Store the analysis for later review
+            if "topic_analysis" not in conversation_memory:
+                conversation_memory["topic_analysis"] = []
+            
+            conversation_memory["topic_analysis"].append({
+                "timestamp": datetime.datetime.now().isoformat(),
+                "conversation_summary": result.get("conversation_summary", ""),
+                "identified_core_needs": result.get("identified_core_needs", []),
+                "conceptual_resource": result.get("conceptual_resource", ""),
+                "url_path": url_path,
+                "rationale": result.get("rationale", "")
+            })
+            
+            return f"@https://youtube.com/{url_path}"
+            
+        except json.JSONDecodeError as e:
+            print(f"Error parsing JSON from link generation response: {str(e)}")
+            # Create a unique path based on timestamp
+            unique_id = str(int(time.time()))[-5:]
+            return f"@https://youtube.com/resource-{unique_id}"
+            
     except Exception as e:
         print(f"Error generating contextual link: {str(e)}")
-        return "http://www.example.com"
+        # Create a unique path based on timestamp
+        unique_id = str(int(time.time()))[-5:]
+        return f"@https://youtube.com/resource-{unique_id}"
 
 def dynamic_link(final_message: str) -> str:
     """Replace [link] placeholder with contextually generated link that displays as a real URL."""
     if "[link]" in final_message:
-        display_url = generate_contextual_link(final_message)
+        display_url = generate_contextual_link(final_message, conversation_memory["messages"])
         # The @ prefix will be used by the UI to know this is a display URL
         return final_message.replace("[link]", display_url)
     return final_message
@@ -1150,6 +1230,24 @@ def process_message(user_input):
         current_stage = conversation_memory.get("current_stage", "INITIAL_ENGAGEMENT")
         stage_policy = CONVERSATION_STAGES[current_stage]["policy"]
         
+        # Check if we're in resource sharing stage
+        resource_stages = ["LINK_INTRODUCTION", "LINK_REINFORCEMENT", "SESSION_COMPLETION"]
+        is_resource_stage = current_stage in resource_stages
+        
+        # If in resource stage, ensure we include a link in the response
+        if is_resource_stage:
+            # Generate contextual link based on conversation
+            display_url = generate_contextual_link(user_input, conversation_memory["messages"])
+            
+            # Modify the stage policy to emphasize resource sharing
+            stage_policy += f"""
+IMPORTANT: You are in the resource sharing stage. Your response MUST:
+1. Include the following link naturally in your response: {display_url}
+2. Make the link relevant to the current conversation about games, systems thinking, and social change
+3. Frame the link as a valuable resource that aligns with the user's interests
+4. Keep the tone natural and conversational
+"""
+        
         # Track topic consistency to avoid rapid topic changes
         topic_history = []
         recent_topics = []
@@ -1312,32 +1410,32 @@ This context is important for understanding the user's brief message. Make sure 
             
             # Enhanced refinement prompt that includes specific improvement areas
             refinement_prompt = f"""
-                You are the Influencer Agent.
-                User said: {user_input}
-                Initial response: {initial_response.content}
+            You are the Influencer Agent.
+            User said: {user_input}
+            Initial response: {initial_response.content}
 
-                            IMPROVEMENTS NEEDED: 
-                            {evaluation_reasoning}
+            IMPROVEMENTS NEEDED: 
+            {evaluation_reasoning}
 
-                CURRENT CONVERSATION STAGE: {current_stage}
-                STAGE POLICY:
-                {stage_policy}
+            CURRENT CONVERSATION STAGE: {current_stage}
+            STAGE POLICY:
+            {stage_policy}
 
-                USER COMMUNICATION STYLE GUIDANCE:
-                {style_guidance}
+            USER COMMUNICATION STYLE GUIDANCE:
+            {style_guidance}
 
-                IMPORTANT GUIDELINES:
-                1. Keep responses concise - aim for Twitter-length (140 characters) when possible
-                2. Be direct and to the point - chat interfaces are optimized for short bursts of text
-                3. LEAD WITH STATEMENTS - Start with observations, opinions, or experiences before asking questions
-                4. Mirror the user's message length - if they send short messages, keep yours brief too
-                5. If the user is giving very short responses, try a different approach to engage them
-                            6. Address the specific improvements needed: {', '.join(improvement_areas)}
-                            7. Only respond to what the user has actually said, not what they might say
-                            8. Maintain continuity with the previous conversation
+            IMPORTANT GUIDELINES:
+            1. Keep responses concise - aim for Twitter-length (140 characters) when possible
+            2. Be direct and to the point - chat interfaces are optimized for short bursts of text
+            3. LEAD WITH STATEMENTS - Start with observations, opinions, or experiences before asking questions
+            4. Mirror the user's message length - if they send short messages, keep yours brief too
+            5. If the user is giving very short responses, try a different approach to engage them
+            6. Address the specific improvements needed: {', '.join(improvement_areas)}
+            7. Only respond to what the user has actually said, not what they might say
+            8. Maintain continuity with the previous conversation
 
-                            Provide your revised response between <final_message> tags.
-                """
+            Provide your revised response between <final_message> tags.
+            """
 
             refinement_response = influencer_llm.invoke([
                 SystemMessage(content=INFLUENCER_SYSTEM_PROMPT),
@@ -1353,7 +1451,17 @@ This context is important for understanding the user's brief message. Make sure 
         # Replace placeholder with dynamic link based on context
         final_message = dynamic_link(final_message)
         
-        # Store the final message in conversation memory
+        # Check if user agrees to see a link
+        if analyze_user_agreement(user_input):
+            # Generate and add contextual link
+            display_url = generate_contextual_link(final_message, conversation_memory["messages"])
+            final_message = f"{final_message}\n\nHere's a detailed video guide: {display_url}"
+
+        # After generating the final message, ensure it includes the link if in resource stage
+        if is_resource_stage and display_url not in final_message:
+            final_message = f"{final_message}\n\nI found this interesting video that explores these themes: {display_url}"
+        
+        # Store in conversation memory
         conversation_memory["messages"].append({
             "role": "INFLUENCER",
             "content": final_message,
@@ -1401,7 +1509,7 @@ This context is important for understanding the user's brief message. Make sure 
         return final_message
     except Exception as e:
         print(f"Error in process_message: {str(e)}")
-        return f"I encountered an error while processing your message: {str(e)}"
+        return "I encountered an error while processing your message. Let me try a simpler response."
 
 def update_digital_twin_actual_response(actual_user_response):
     if digital_twin.custom_session_memory:
@@ -1513,13 +1621,44 @@ def record_link_click(chat_history, state):
 #####################################
 
 def record_feedback(feedback_text, chat_history, state):
-    state["conv"].append(("FEEDBACK", feedback_text))
-    chat_history.append(("Feedback", feedback_text))
-    # Update to GOAL_COMPLETION stage after feedback
-    conversation_memory["current_stage"] = "GOAL_COMPLETION"
-    conversation_memory["stage_history"].append("GOAL_COMPLETION")
-    save_conversation({"conv": state["conv"]})
-    return chat_history, state, feedback_text, update_stage_display("GOAL_COMPLETION")
+    try:
+        # Add feedback to UI and state with proper labeling
+        state["conv"].append(("FEEDBACK: " + feedback_text, None))
+        chat_history.append(("Feedback", feedback_text))
+            
+            # Update to GOAL_COMPLETION stage
+        conversation_memory["current_stage"] = "GOAL_COMPLETION"
+        conversation_memory["stage_history"].append("GOAL_COMPLETION")
+            
+        # Create a comprehensive data package to save
+        save_data = {
+            "conv": state["conv"],
+            "timestamp": datetime.datetime.now().isoformat(),
+            "session_metrics": {
+                "engagement_metrics": get_quality_metrics(),
+                "trust_scores": conversation_memory["trust_scores"],
+                "link_clicks": conversation_memory["link_clicks"],
+                "stage_history": conversation_memory["stage_history"]
+            },
+            "feedback": feedback_text
+        }
+        
+        # Save the comprehensive data
+        saved_filename = save_conversation(save_data)
+        
+        # Add a confirmation message with proper labeling
+        chat_history.append((None, f"Thank you for your feedback! Conversation data saved successfully."))
+        state["conv"].append((None, "SYSTEM: Thank you for your feedback! Conversation data saved successfully."))
+        
+        print(f"Conversation saved to {saved_filename} with feedback")
+        
+        return chat_history, state, json.dumps({"status": "feedback_recorded", "filename": saved_filename}), update_stage_display("GOAL_COMPLETION")
+    except Exception as e:
+        error_msg = f"Error saving feedback: {str(e)}"
+        print(error_msg)
+        chat_history.append((None, f"Error saving feedback. Please try again."))
+        state["conv"].append((None, "SYSTEM: Error saving feedback. Please try again."))
+        return chat_history, state, json.dumps({"error": error_msg}), update_stage_display(conversation_memory["current_stage"])
 
 #####################################
 # 10. Session Reset Function
@@ -1614,12 +1753,79 @@ setTimeout(() => {
 
 
 def save_conversation(conversation_data, filename=None):
+    """
+    Save conversation data to JSON files in a dedicated session folder.
+    
+    Args:
+        conversation_data (dict): Conversation data to save
+        filename (str, optional): Custom filename to use
+        
+    Returns:
+        str: Path to the saved conversation file
+    """
+    # Generate timestamp for folder name
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # Create session folder
+    session_folder = os.path.join(STORAGE_DIR, f"session_{timestamp}")
+    if not os.path.exists(session_folder):
+        os.makedirs(session_folder)
+    
+    # Set filenames
     if filename is None:
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{STORAGE_DIR}/conversation_{timestamp}.json"
-    with open(filename, 'w') as f:
+        # Use the session folder with standard filenames
+        main_filename = os.path.join(session_folder, "conversation.json")
+        twin_filename = os.path.join(session_folder, "digital_twin.json")
+        influencer_filename = os.path.join(session_folder, "influencer.json")
+    else:
+        # Use provided filename but still in the session folder
+        base_name = os.path.splitext(os.path.basename(filename))[0]
+        main_filename = os.path.join(session_folder, f"{base_name}.json")
+        twin_filename = os.path.join(session_folder, f"{base_name}_twin.json")
+        influencer_filename = os.path.join(session_folder, f"{base_name}_influencer.json")
+    
+    # Save main conversation data
+    with open(main_filename, 'w') as f:
         json.dump(conversation_data, f, indent=2)
-    return filename
+    
+    # Save digital twin memory to a separate file
+    twin_data = {
+        "user_biography": digital_twin.get_current_user_biography(),
+        "session_memory": digital_twin.custom_session_memory,
+        "predictions": digital_twin_memory["predictions"]
+    }
+    with open(twin_filename, 'w') as f:
+        json.dump(twin_data, f, indent=2)
+    
+    # Save influencer memory to a separate file
+    influencer_data = {
+        "conversation_memory": conversation_memory,
+        "metrics": get_quality_metrics()
+    }
+    with open(influencer_filename, 'w') as f:
+        json.dump(influencer_data, f, indent=2)
+    
+    # Create a session info file with metadata
+    session_info = {
+        "timestamp": timestamp,
+        "datetime": datetime.datetime.now().isoformat(),
+        "files": {
+            "conversation": os.path.basename(main_filename),
+            "digital_twin": os.path.basename(twin_filename),
+            "influencer": os.path.basename(influencer_filename)
+        },
+        "metrics_summary": {
+            "messages_count": len(conversation_memory["messages"]),
+            "final_stage": conversation_memory["current_stage"],
+            "link_clicks": conversation_memory["link_clicks"]
+        }
+    }
+    session_info_filename = os.path.join(session_folder, "session_info.json")
+    with open(session_info_filename, 'w') as f:
+        json.dump(session_info, f, indent=2)
+    
+    print(f"Session saved to folder: {session_folder}")
+    return main_filename
 
 def add_user_message(user_message, chat_history, state):
     if not user_message.strip():
@@ -1638,7 +1844,7 @@ def add_user_message(user_message, chat_history, state):
         "timestamp": datetime.datetime.now().isoformat()
     })
     
-    # Update UI state
+    # Update UI state - ensure proper labeling
     state["conv"].append((f"USER: {user_message}", None))
     chat_history.append((user_message, "Thinking..."))
     
@@ -1671,51 +1877,102 @@ def add_link_guidance(response, chat_history, state):
         return response, True
     return response, False
 
-# Modify the process_and_update function to include link guidance
+def handle_link_click(link_url: str):
+    """Handle when a user clicks on a resource link."""
+    try:
+        # Record the click in conversation memory
+        conversation_memory["link_clicks"] += 1
+        
+        # Create a message about the link click
+        link_click_message = f"User clicked on resource link: {link_url}"
+        
+        # Log the click event
+        click_event = {
+            "timestamp": datetime.datetime.now().isoformat(),
+            "url": link_url,
+            "stage": conversation_memory["current_stage"],
+            "message": link_click_message
+        }
+        
+        # Add to main conversation data with proper labeling
+        conversation_memory["messages"].append({
+            "role": "SYSTEM",
+            "content": link_click_message,
+            "timestamp": datetime.datetime.now().isoformat(),
+            "event_type": "link_click"
+        })
+        
+        # Store click event in conversation memory
+        if "link_click_events" not in conversation_memory:
+            conversation_memory["link_click_events"] = []
+        conversation_memory["link_click_events"].append(click_event)
+        
+        # Update stage to completion if not already there
+        if conversation_memory["current_stage"] != "SESSION_COMPLETION":
+            conversation_memory["current_stage"] = "SESSION_COMPLETION"
+            conversation_memory["stage_history"].append("SESSION_COMPLETION")
+        
+        return json.dumps({"status": "link_clicked", "message": f"SYSTEM: {link_click_message}"})
+    except Exception as e:
+        print(f"Error handling link click: {str(e)}")
+        return json.dumps({"error": str(e)})
+
 def process_and_update(user_message, chat_history, state):
     if not user_message.strip():
-        return chat_history, state, json.dumps({"status": "No message to process"}), update_stage_display(conversation_memory["current_stage"])
+        return chat_history, state, json.dumps({"status": "No message to process", "is_resource_stage": False}), update_stage_display(conversation_memory["current_stage"]), gr.update()
     try:
         response = process_message(user_message)
         
-        # Check if we're in or past the resource sharing stage
+        # Check if we're in resource sharing stage
         current_stage = conversation_memory["current_stage"]
         resource_stages = ["LINK_INTRODUCTION", "LINK_REINFORCEMENT", "SESSION_COMPLETION"]
         is_resource_stage = current_stage in resource_stages
         
-        # Add link guidance if needed and in appropriate stage
-        response, has_link = add_link_guidance(response, chat_history, state)
-        
-        # Format the response to make URLs clickable
-        formatted_response = format_message_with_links(response)
-        
-        # Update UI state
+        # Update UI state - ensure proper labeling for system messages
         for i in range(len(state["conv"]) - 1, -1, -1):
             if state["conv"][i][1] is None:
-                state["conv"][i] = (state["conv"][i][0], formatted_response)
+                state["conv"][i] = (state["conv"][i][0], f"SYSTEM: {response}")
                 break
         
         for i in range(len(chat_history) - 1, -1, -1):
             if chat_history[i][1] == "Thinking...":
-                chat_history[i] = (chat_history[i][0], formatted_response)
+                chat_history[i] = (chat_history[i][0], response)
                 break
+        
+        # Enhanced link detection
+        has_link = any([
+            "@https://" in response,
+            "https://youtube.com/" in response,
+            "youtube.com/relationship-building-tips" in response
+        ])
         
         debug_info = {
             "conversation_state": state["conv"],
             "chat_history": chat_history,
             "final_response": response,
+            "is_resource_stage": is_resource_stage,
             "has_link": has_link,
-            "is_resource_stage": is_resource_stage
+            "current_stage": current_stage
         }
         
-        # Get current stage for UI update
-        stage_display_html = update_stage_display(current_stage)
-        
-        return chat_history, state, json.dumps(debug_info, indent=2), stage_display_html
+        # Clear the textbox properly using gr.update()
+        return (
+            chat_history, 
+            state, 
+            json.dumps(debug_info), 
+            update_stage_display(current_stage),
+            gr.update(value="", interactive=True)  # Clear textbox and ensure it's interactive
+        )
     except Exception as e:
         error_msg = f"Error: {str(e)}"
         print(f"DEBUG - Error in processing: {error_msg}")
-        return chat_history, state, json.dumps({"error": error_msg}), update_stage_display(conversation_memory["current_stage"])
+        return (
+            chat_history, 
+            state, 
+            json.dumps({"error": error_msg, "is_resource_stage": False, "has_link": False}), 
+            update_stage_display(conversation_memory["current_stage"]),
+            gr.update(interactive=True)  # Ensure textbox remains interactive even after error
+        )
 
 #####################################
 # 12. Build the Gradio Interface
@@ -1790,9 +2047,13 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         with gr.Column(scale=2):
             chatbot = gr.Chatbot(label="Conversation", elem_id="chatbox", height=400)
             with gr.Row():
-                msg = gr.Textbox(label="Your Message", scale=3)
+                msg = gr.Textbox(
+                    label="Your Message",
+                    scale=3,
+                    interactive=True  # Ensure it starts as interactive
+                )
                 send = gr.Button("Send", scale=1)
-                link_click = gr.Button("Record Link Click", scale=1, interactive=False, elem_classes="record-link-button")
+                link_click = gr.Button("Visit Resource", scale=1, interactive=False, variant="secondary")
                 #reset = gr.Button("Reset Session", scale=1)
         with gr.Column(scale=1):
             with gr.Tabs():
@@ -1811,69 +2072,192 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     feedback = gr.Textbox(label="Feedback", placeholder="Enter your feedback here...", visible=False)
     submit_feedback = gr.Button("Submit Feedback", scale=1, visible=False)
     
+    # Modify the button enabling logic
+    def update_button_state(debug_json):
+        try:
+            # Handle both string and dictionary inputs
+            if isinstance(debug_json, str):
+                debug_data = json.loads(debug_json or "{}")
+            else:
+                debug_data = debug_json or {}
+                
+            is_resource_stage = debug_data.get("is_resource_stage", False)
+            has_link = debug_data.get("has_link", False)
+            should_enable = is_resource_stage and has_link
+            print(f"DEBUG - Button state: is_resource_stage={is_resource_stage}, has_link={has_link}, enable={should_enable}")
+            
+            # Return a more visually apparent enabled state for the button when it's active
+            if should_enable:
+                return gr.update(interactive=True, variant="primary")
+            else:
+                return gr.update(interactive=False, variant="secondary")
+        except Exception as e:
+            print(f"Error updating button state: {str(e)}")
+            return gr.update(interactive=False, variant="secondary")
+    
     send.click(
+        lambda: gr.update(interactive=False),  # Disable button immediately
+        inputs=None,
+        outputs=[send]
+    ).then(
         add_user_message,
         inputs=[msg, chatbot, conversation_state],
         outputs=[chatbot, conversation_state, msg]
     ).then(
         process_and_update,
         inputs=[msg, chatbot, conversation_state],
-        outputs=[chatbot, conversation_state, debug_output, stage_display]
+        outputs=[chatbot, conversation_state, debug_output, stage_display, msg]
     ).then(
-        lambda debug_json: gr.update(
-            interactive=json.loads(debug_json).get("is_resource_stage", False),
-            elem_classes="record-link-active" if json.loads(debug_json).get("is_resource_stage", False) else ""
-        ),
+        update_button_state,
+        inputs=[debug_output],
         outputs=[link_click]
+    ).then(
+        lambda: gr.update(interactive=True),  # Re-enable button after processing
+        inputs=None,
+        outputs=[send]
     ).then(
         lambda: "",
         outputs=[msg]
     )
     
     msg.submit(
+        lambda: gr.update(interactive=False),  # Disable button immediately
+        inputs=None,
+        outputs=[send]
+    ).then(
         add_user_message,
         inputs=[msg, chatbot, conversation_state],
         outputs=[chatbot, conversation_state, msg]
     ).then(
         process_and_update,
         inputs=[msg, chatbot, conversation_state],
-        outputs=[chatbot, conversation_state, debug_output, stage_display]
+        outputs=[chatbot, conversation_state, debug_output, stage_display, msg]
     ).then(
-        lambda debug_json: gr.update(
-            interactive=json.loads(debug_json).get("is_resource_stage", False),
-            elem_classes="record-link-active" if json.loads(debug_json).get("is_resource_stage", False) else ""
-        ),
+        update_button_state,
+        inputs=[debug_output],
         outputs=[link_click]
+    ).then(
+        lambda: gr.update(interactive=True),  # Re-enable button after processing
+        inputs=None,
+        outputs=[send]
     ).then(
         lambda: "",
         outputs=[msg]
     )
     
-    refresh_btn.click(lambda: gr.Dropdown(choices=[f for f in os.listdir(STORAGE_DIR) if f.endswith('.json')]),
-                      outputs=[log_files])
+    def get_session_folders():
+        """Get a list of all session folders in the storage directory."""
+        if not os.path.exists(STORAGE_DIR):
+            return []
+        
+        # Look for folders that match the session pattern
+        folders = [d for d in os.listdir(STORAGE_DIR) 
+                  if os.path.isdir(os.path.join(STORAGE_DIR, d)) and d.startswith("session_")]
+        
+        # Sort by name (which includes timestamp) in reverse order (newest first)
+        folders.sort(reverse=True)
+        
+        return folders
+
+    def load_session_data(session_folder):
+        """Load all data from a session folder."""
+        if not session_folder:
+            return {}
+        
+        folder_path = os.path.join(STORAGE_DIR, session_folder)
+        
+        # Check for session info file first
+        info_path = os.path.join(folder_path, "session_info.json")
+        if os.path.exists(info_path):
+            try:
+                with open(info_path, 'r') as f:
+                    session_info = json.load(f)
+            except:
+                session_info = {"error": "Failed to load session info"}
+        else:
+            session_info = {"note": "No session info file found"}
+        
+        # Load conversation data
+        conv_path = os.path.join(folder_path, "conversation.json")
+        if os.path.exists(conv_path):
+            try:
+                with open(conv_path, 'r') as f:
+                    conversation = json.load(f)
+            except:
+                conversation = {"error": "Failed to load conversation data"}
+        else:
+            # Try to find any JSON file that might contain conversation data
+            json_files = [f for f in os.listdir(folder_path) if f.endswith('.json') and not f.startswith('session_info')]
+            if json_files:
+                try:
+                    with open(os.path.join(folder_path, json_files[0]), 'r') as f:
+                        conversation = json.load(f)
+                except:
+                    conversation = {"error": "Failed to load any conversation data"}
+            else:
+                conversation = {"error": "No conversation data found"}
+        
+        # Compile all data
+        result = {
+            "session_info": session_info,
+            "conversation": conversation,
+            "folder_path": folder_path,
+            "files": [f for f in os.listdir(folder_path) if f.endswith('.json')]
+        }
+        
+        return result
+    
+    refresh_btn.click(
+        get_session_folders,
+        outputs=[log_files]
+    )
+    
     log_files.change(
-        lambda f: json.load(open(os.path.join(STORAGE_DIR, f), 'r')) if f else {},
+        load_session_data,
         inputs=[log_files],
         outputs=[log_content]
     )
     
     link_click.click(
-        record_link_click,
-        inputs=[chatbot, conversation_state],
-        outputs=[chatbot, conversation_state, debug_output, stage_display]
+        lambda: gr.update(interactive=False, value="Processing...", variant="secondary"),  # Show loading state
+        inputs=None,
+        outputs=[link_click]
     ).then(
-        lambda: "",
+        lambda: handle_link_click("https://youtube.com/relationship-building-tips"),
+        outputs=[debug_output]
+    ).then(
+        # Function to add the link click message to the conversation
+        lambda debug_json: process_link_click_result(debug_json, conversation_state.value, chatbot.value),
+        inputs=[debug_output, conversation_state, chatbot],
+        outputs=[conversation_state, chatbot]
+    ).then(
+        lambda: gr.update(visible=True, value="Thank you for visiting the resource! Would you like to share your thoughts about it?"),
+        outputs=[feedback]
+    ).then(
+        lambda: gr.update(visible=True),
+        outputs=[submit_feedback]
+    ).then(
+        lambda: gr.update(interactive=False, value="Visit Resource", variant="secondary"),  # Reset button appearance
+        inputs=None,
+        outputs=[link_click]
+    ).then(
+        lambda: gr.update(interactive=False, placeholder="Conversation completed. Please provide feedback."),  # Disable send button
+        inputs=None,
         outputs=[msg]
     ).then(
-        # 5. Show the feedback form
-        lambda: (gr.update(visible=True, value="Please enter your feedback about the conversation:"), gr.update(visible=True)),
-        outputs=[feedback, submit_feedback]
+        lambda: gr.update(interactive=False),  # Disable send button
+        inputs=None,
+        outputs=[send]
     )
     
     submit_feedback.click(
         record_feedback,
         inputs=[feedback, chatbot, conversation_state],
         outputs=[chatbot, conversation_state, debug_output, stage_display]
+    ).then(
+        lambda: gr.update(interactive=False),  # Disable the button after submission
+        inputs=None,
+        outputs=[submit_feedback]
     )
     
     refresh_mem_btn = gr.Button("Refresh Memory Views")
@@ -1944,7 +2328,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         elif current == "RAPPORT_BUILDING":
             # Require sustained engagement and personal disclosure
             personal_disclosure = calculate_personal_disclosure(conversation_memory["messages"])
-            if (messages_count >= 6 and engagement_depth > 0.3 and 
+            if (messages_count >= 6 and engagement_depth > 0.2 and 
                 personal_disclosure > 0.2 and trust_score > 0.2):
                 print("Stage criteria met: RAPPORT_BUILDING -> TRUST_DEVELOPMENT")
                 return "TRUST_DEVELOPMENT"
@@ -1952,14 +2336,14 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         elif current == "TRUST_DEVELOPMENT":
             # Require demonstrated interest in resources
             resource_interest = calculate_resource_interest(conversation_memory["messages"])
-            if (messages_count >= 8 and engagement_depth > 0.4 and 
+            if (messages_count >= 8 and engagement_depth > 0.3 and 
                 resource_interest > 0.3 and trust_score > 0.3):
                 print("Stage criteria met: TRUST_DEVELOPMENT -> LINK_INTRODUCTION")
                 return "LINK_INTRODUCTION"
             
         elif current == "LINK_INTRODUCTION" and "http" in influencer_response:
             # Check for sufficient user consideration time
-            if get_message_response_time() > 5 and trust_score > 0.45:
+            if get_message_response_time() > 5 and trust_score > 0.4:
                 print("Stage criteria met: LINK_INTRODUCTION -> LINK_REINFORCEMENT")
                 return "LINK_REINFORCEMENT"
         
@@ -2236,6 +2620,40 @@ def generate_style_guidance_for_response(conversation_memory):
         guidance += "- Use complete sentences but keep them conversational\n"
     
     return guidance
+    
+def analyze_user_agreement(user_message: str) -> bool:
+    """Use metrics_llm to determine if the user agrees to see a link."""
+    prompt = f"""
+Analyze the following message to determine if the user is agreeing to see a link.
+
+Message: "{user_message}"
+
+TASK:
+Return "true" if the user agrees to see a link, otherwise return "false".
+"""
+    try:
+        response = metrics_llm.invoke([
+            SystemMessage(content="You are an expert in conversation analysis."),
+            HumanMessage(content=prompt)
+        ])
+        return response.content.strip().lower() == "true"
+    except Exception as e:
+        print(f"Error analyzing user agreement: {str(e)}")
+        return False
+
+# Add helper function to process link click result
+def process_link_click_result(debug_json, state, chat_history):
+    try:
+        debug_data = json.loads(debug_json)
+        if "message" in debug_data:
+            # Add link click message to state
+            state["conv"].append((None, debug_data["message"]))
+            # Add a simplified version to chat history
+            chat_history.append((None, "You clicked on the resource link."))
+        return state, chat_history
+    except Exception as e:
+        print(f"Error processing link click: {str(e)}")
+        return state, chat_history
     
 if __name__ == "__main__":
     print(f"API Key exists: {os.environ.get('NEBIUS_API_KEY') is not None}")

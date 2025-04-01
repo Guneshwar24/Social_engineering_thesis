@@ -1,0 +1,14 @@
+{
+  "timestamp": "20250331_220138",
+  "datetime": "2025-03-31T22:01:38.538828",
+  "files": {
+    "conversation": "conversation.json",
+    "digital_twin": "digital_twin.json",
+    "influencer": "influencer.json"
+  },
+  "metrics_summary": {
+    "messages_count": 27,
+    "final_stage": "GOAL_COMPLETION",
+    "link_clicks": 1
+  }
+}
