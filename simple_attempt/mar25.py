@@ -8,6 +8,10 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from openai import OpenAI
 import time
 import random
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 #####################################
 # 1. Define the custom LLM wrapper  #
@@ -223,6 +227,24 @@ CONVERSATION_STAGES = {
 #####################################
 # New Quality Metrics Functions    #
 #####################################
+# Add this to the conversation_memory initialization
+def initialize_conversation_memory():
+    return {
+        "messages": [], 
+        "current_stage": "INITIAL_ENGAGEMENT",
+        "stage_history": [],
+        "link_clicks": 0,
+        "trust_scores": [],
+        "response_timestamps": [],
+        "engagement_depth": {
+            "current_score": 0.5,
+            "history": [],
+            "substantive_count": 0
+        },
+        "metrics_history": [],  # New field to track all metrics over time
+        "current_resource_url": None  # New field to track the latest URL
+    }
+
 
 def analyze_response_timing():
     """
@@ -311,6 +333,48 @@ def get_default_metrics() -> dict:
         }
     }
 
+
+def update_metrics_history():
+    """Store current metrics in history with timestamps for analysis."""
+    try:
+        # Get current metrics
+        metrics = get_quality_metrics()
+        
+        # Add contextual information
+        metrics["timestamp"] = datetime.datetime.now().isoformat()
+        metrics["message_count"] = len(conversation_memory["messages"])
+        metrics["current_stage"] = conversation_memory["current_stage"]
+        
+        # Add trust score from most recent calculation
+        if conversation_memory["trust_scores"]:
+            metrics["trust_score"] = conversation_memory["trust_scores"][-1]["score"]
+        else:
+            metrics["trust_score"] = 0.5  # Default
+        
+        # Store stage transition metrics
+        stage_metrics = {}
+        try:
+            # Include specific stage transition metrics when available
+            if conversation_memory["current_stage"] == "RAPPORT_BUILDING":
+                stage_metrics["personal_disclosure"] = calculate_personal_disclosure(conversation_memory["messages"])
+            elif conversation_memory["current_stage"] == "TRUST_DEVELOPMENT":
+                stage_metrics["resource_interest"] = calculate_resource_interest(conversation_memory["messages"])
+        except Exception as e:
+            print(f"Error calculating stage metrics: {str(e)}")
+        
+        metrics["stage_metrics"] = stage_metrics
+        
+        # Add to history
+        if "metrics_history" not in conversation_memory:
+            conversation_memory["metrics_history"] = []
+        
+        conversation_memory["metrics_history"].append(metrics)
+        print(f"Metrics history updated with {len(metrics)} metrics")
+        
+    except Exception as e:
+        print(f"Error updating metrics history: {str(e)}")
+
+
 def analyze_message_with_llm(message: str, conversation_history: list, current_stage: str) -> dict:
     """
     Use metrics_llm to analyze message characteristics and metrics
@@ -360,18 +424,17 @@ IMPORTANT: Return ONLY valid JSON with numeric scores between 0-1. Do not includ
 
     try:
         # Use metrics_llm instead of influencer_llm
-        response = metrics_llm.invoke([
-            SystemMessage(content="You are an expert in conversation analysis and metrics calculation. Always return valid JSON with numeric scores between 0-1."),
+        response = metrics_llm.invoke([SystemMessage(content="You are an expert in conversation analysis and metrics calculation. Always return valid JSON with numeric scores between 0-1."),
             HumanMessage(content=prompt)
         ])
         
         # Clean the response to ensure it's valid JSON
         cleaned_response = response.content.strip()
-        
+                
         # Remove any markdown code block markers if present
         cleaned_response = re.sub(r'```json\s*|\s*```', '', cleaned_response)
-        
-        # Try to parse the JSON
+
+        # Add this try-except block:
         try:
             metrics = json.loads(cleaned_response)
             
@@ -390,8 +453,8 @@ IMPORTANT: Return ONLY valid JSON with numeric scores between 0-1. Do not includ
             return metrics
             
         except json.JSONDecodeError as e:
-            print(f"JSON parsing error: {str(e)}")
-            print(f"Raw response: {cleaned_response}")
+            print(f"JSON parsing error in analyze_message_with_llm: {str(e)}")
+            print(f"Raw response was: {cleaned_response}")
             return get_default_metrics()
             
     except Exception as e:
@@ -400,51 +463,157 @@ IMPORTANT: Return ONLY valid JSON with numeric scores between 0-1. Do not includ
 
 # Modified calculate_engagement_depth to use LLM
 def calculate_engagement_depth(current_input: str, history: list) -> float:
-    """Calculate engagement depth using LLM analysis"""
-    metrics = analyze_message_with_llm(current_input, history, conversation_memory["current_stage"])
-    
-    # Extract engagement metrics
-    engagement_scores = metrics.get("engagement_metrics", {})
-    
-    # Calculate weighted average of engagement metrics
-    weighted_score = (
-        engagement_scores.get("response_length_quality", 0.5) * 0.2 +
-        engagement_scores.get("topic_continuity", 0.5) * 0.3 +
-        engagement_scores.get("personal_disclosure", 0.5) * 0.3 +
-        engagement_scores.get("enthusiasm_level", 0.5) * 0.2
-    )
-    
-    # Store in memory
-    conversation_memory["engagement_depth"]["history"].append(weighted_score)
-    conversation_memory["engagement_depth"]["current_score"] = weighted_score
-    
-    return weighted_score
+    """Calculate engagement depth using LLM analysis with robust fallbacks."""
+    try:
+        # Format recent conversation history
+        recent_msgs = history[-5:] if len(history) >= 5 else history
+        formatted_history = "\n".join([
+            f"{msg['role']}: {msg['content']}" 
+            for msg in recent_msgs
+        ])
+        
+        # Create prompt for engagement analysis
+        prompt = f"""
+        Analyze the user's engagement level in this conversation.
+        
+        RECENT CONVERSATION:
+        {formatted_history}
+        
+        CURRENT USER MESSAGE:
+        "{current_input}"
+        
+        Evaluate the following engagement metrics (all between 0-1):
+        - response_length_quality: Appropriate length and detail
+        - topic_continuity: How well they maintain conversation flow
+        - personal_disclosure: Amount of personal information shared
+        - enthusiasm_level: Detected enthusiasm in message
+        
+        Return a JSON object with:
+        - metrics: the individual scores
+        - overall_engagement: weighted average engagement score
+        - reasoning: brief explanation
+        
+        IMPORTANT: Return ONLY valid JSON with numeric scores between 0-1.
+        """
+        
+        # Call the LLM
+        response = metrics_llm.invoke([
+            SystemMessage(content="You are an engagement analysis expert. Return ONLY valid JSON with numeric scores."),
+            HumanMessage(content=prompt)
+        ])
+        
+        # Parse the response with robust error handling
+        try:
+            # Clean response text
+            cleaned_response = response.content.strip()
+            cleaned_response = re.sub(r'```json\s*|\s*```', '', cleaned_response)
+            
+            # Try JSON parsing first
+            try:
+                result = json.loads(cleaned_response)
+                
+                # Try to get overall score directly
+                if "overall_engagement" in result and isinstance(result["overall_engagement"], (int, float)):
+                    engagement_score = result["overall_engagement"]
+                    if 0 <= engagement_score <= 1:
+                        print(f"Overall engagement: {engagement_score:.2f} - {result.get('reasoning', 'No reasoning')}")
+                        
+                        # Store in memory
+                        conversation_memory["engagement_depth"]["history"].append(engagement_score)
+                        conversation_memory["engagement_depth"]["current_score"] = engagement_score
+                        
+                        return engagement_score
+                
+                # If no overall score, calculate from metrics
+                metrics = result.get("metrics", {})
+                if metrics and isinstance(metrics, dict):
+                    weighted_score = (
+                        metrics.get("response_length_quality", 0.5) * 0.2 +
+                        metrics.get("topic_continuity", 0.5) * 0.3 +
+                        metrics.get("personal_disclosure", 0.5) * 0.3 +
+                        metrics.get("enthusiasm_level", 0.5) * 0.2
+                    )
+                    
+                    # Store in memory
+                    conversation_memory["engagement_depth"]["history"].append(weighted_score)
+                    conversation_memory["engagement_depth"]["current_score"] = weighted_score
+                    
+                    return weighted_score
+                
+                raise ValueError("No valid engagement metrics found in response")
+                
+            except json.JSONDecodeError:
+                # If JSON fails, look for numeric values
+                matches = re.findall(r'(\d+\.\d+|\d+)', cleaned_response)
+                if matches:
+                    for match in matches:
+                        score = float(match)
+                        if 0 <= score <= 1:
+                            print(f"Extracted engagement score from text: {score:.2f}")
+                            
+                            # Store in memory
+                            conversation_memory["engagement_depth"]["history"].append(score)
+                            conversation_memory["engagement_depth"]["current_score"] = score
+                            
+                            return score
+            
+            # If all parsing fails, fall back to rule-based
+            raise ValueError("Could not parse LLM response")
+            
+        except Exception as e:
+            print(f"Error parsing engagement from LLM: {str(e)}")
+            # Fall back to rule-based calculation
+            
+            # Message length
+            word_count = len(current_input.split())
+            length_score = min(0.9, word_count / 20)
+            
+            # Question asking
+            question_score = 0.7 if "?" in current_input else 0.5
+            
+            # Personal disclosure 
+            disclosure_score = 0.5
+            for phrase in ["i feel", "i think", "i believe", "my", "i'm", "i've"]:
+                if phrase in current_input.lower():
+                    disclosure_score += 0.1
+            disclosure_score = min(0.9, disclosure_score)
+            
+            # Combined score
+            engagement_score = (length_score * 0.4) + (question_score * 0.2) + (disclosure_score * 0.4)
+            engagement_score = max(0.1, min(0.9, engagement_score))
+            
+            # Store in memory
+            conversation_memory["engagement_depth"]["history"].append(engagement_score)
+            conversation_memory["engagement_depth"]["current_score"] = engagement_score
+            
+            print(f"Fallback engagement calculation: {engagement_score:.2f}")
+            return engagement_score
+            
+    except Exception as e:
+        print(f"Critical error in engagement calculation: {str(e)}")
+        # Return a moderate score as fallback
+        return 0.5
 
 def calculate_substantive_ratio(conversation):
-    """Calculates the substantive ratio using metrics LLM."""
-    # Prepare the conversation history for analysis
-    formatted_history = "\n".join([msg["content"] for msg in conversation[-4:] if msg["role"] == "USER"])
-
-    # Create a prompt for the metrics LLM
-    prompt = f"""
-    Analyze the following conversation messages and determine the substantive ratio.
-    Provide a score between 0 and 1 based on the depth and quality of the messages.
-
-    CONTEXT:
-    Conversation History: {formatted_history}
-
-    TASK:
-    Return a JSON object with the substantive ratio score.
-    """
-
-    # Invoke the metrics LLM with the prompt
-    response = metrics_llm.invoke([SystemMessage(content="You are an expert in conversation analysis."),
-                                   HumanMessage(content=prompt)])
-
-    # Extract the substantive ratio score from the response
-    substantive_ratio = json.loads(response.content).get("substantive_ratio", 0.5)
-
-    return substantive_ratio
+    """Calculates the substantive ratio with robust error handling."""
+    try:
+        # Simple substantive ratio calculation without JSON parsing
+        user_messages = [msg for msg in conversation if msg["role"] == "USER"]
+        
+        if not user_messages:
+            return 0.5  # Default if no messages
+            
+        # Calculate based on message length (simple but reliable)
+        total_words = sum(len(msg["content"].split()) for msg in user_messages)
+        avg_words = total_words / len(user_messages)
+        
+        # Scale to a 0-1 range (more words = more substantive)
+        substantive_ratio = min(1.0, avg_words / 30)  # Cap at 30 words
+        return substantive_ratio
+        
+    except Exception as e:
+        print(f"Error calculating substantive ratio: {str(e)}")
+        return 0.5  # Default to neutral value
 
 def analyze_linguistic_engagement(text):
     """Analyze linguistic engagement using metrics LLM."""
@@ -470,56 +639,213 @@ def analyze_linguistic_engagement(text):
     return engagement_metrics
 
 def calculate_personal_disclosure(conversation):
-    """Calculates personal disclosure using metrics LLM."""
-    # Prepare the conversation history for analysis
-    formatted_history = "\n".join([msg["content"] for msg in conversation[-3:] if msg["role"] == "USER"])
-
-    # Create a prompt for the metrics LLM
-    prompt = f"""
-    Analyze the following conversation messages to assess personal disclosure.
-    Provide a score between 0 and 1 based on the amount of personal information shared.
-
-    CONTEXT:
-    Conversation History: {formatted_history}
-
-    TASK:
-    Return a JSON object with the personal disclosure score.
-    """
-
-    # Invoke the metrics LLM with the prompt
-    response = metrics_llm.invoke([SystemMessage(content="You are an expert in personal disclosure analysis."),
-                                   HumanMessage(content=prompt)])
-
-    # Extract the personal disclosure score from the response
-    personal_disclosure_score = json.loads(response.content).get("personal_disclosure", 0.5)
-
-    return personal_disclosure_score
+    """Calculate personal disclosure using LLM analysis with robust fallbacks."""
+    try:
+        # Extract recent user messages
+        user_messages = [msg["content"] for msg in conversation if msg["role"] == "USER"]
+        if not user_messages:
+            return 0.5
+            
+        # Use just the most recent messages
+        recent_messages = user_messages[-3:] if len(user_messages) >= 3 else user_messages
+        formatted_messages = "\n".join(recent_messages)
+        
+        # Create LLM prompt
+        prompt = f"""
+        Analyze these user messages for personal disclosure level.
+        
+        USER MESSAGES:
+        {formatted_messages}
+        
+        Evaluate how much personal information the user has shared, including:
+        - Personal opinions and beliefs
+        - Experiences and anecdotes
+        - Feelings and emotions
+        - Personal preferences
+        - Background information
+        
+        Return a JSON object with:
+        - disclosure_score: a number between 0 and 1
+        - reasoning: brief explanation of your rating
+        - key_disclosures: list of any notable personal information shared
+        
+        IMPORTANT: Return ONLY valid JSON with numeric scores.
+        """
+        
+        # Call the LLM
+        response = metrics_llm.invoke([
+            SystemMessage(content="You are a disclosure analysis expert. Return ONLY valid JSON with a numeric disclosure_score."),
+            HumanMessage(content=prompt)
+        ])
+        
+        # Parse the response with robust error handling
+        try:
+            # Clean response text
+            cleaned_response = response.content.strip()
+            cleaned_response = re.sub(r'```json\s*|\s*```', '', cleaned_response)
+            
+            # Try JSON parsing first
+            try:
+                result = json.loads(cleaned_response)
+                disclosure_score = result.get("disclosure_score", 0.5)
+                if not isinstance(disclosure_score, (int, float)) or disclosure_score < 0 or disclosure_score > 1:
+                    disclosure_score = 0.5
+                
+                print(f"Disclosure evaluation: {disclosure_score:.2f} - {result.get('reasoning', 'No reasoning')}")
+                
+                # Store key disclosures if available
+                if "key_disclosures" in result and isinstance(result["key_disclosures"], list):
+                    if "user_disclosures" not in conversation_memory:
+                        conversation_memory["user_disclosures"] = []
+                    conversation_memory["user_disclosures"].extend(result["key_disclosures"])
+                
+                return disclosure_score
+                
+            except json.JSONDecodeError:
+                # If JSON fails, look for numeric values
+                matches = re.findall(r'(\d+\.\d+|\d+)', cleaned_response)
+                if matches:
+                    for match in matches:
+                        score = float(match)
+                        if 0 <= score <= 1:
+                            print(f"Extracted disclosure score from text: {score:.2f}")
+                            return score
+            
+            # If all parsing fails, fall back to rule-based
+            raise ValueError("Could not parse LLM response")
+            
+        except Exception as e:
+            print(f"Error parsing disclosure from LLM: {str(e)}")
+            # Fall back to rule-based calculation
+            
+            # Base score
+            disclosure_score = 0.3
+            
+            # Disclosure markers
+            disclosure_markers = [
+                "i feel", "i think", "i believe", "in my opinion", 
+                "i've", "i have", "i am", "i'm", "my", "mine", "myself",
+                "personally", "for me", "in my experience"
+            ]
+            
+            # Calculate score
+            for msg in recent_messages:
+                msg_lower = msg.lower()
+                for marker in disclosure_markers:
+                    if marker in msg_lower:
+                        disclosure_score += 0.05
+            
+            disclosure_score = min(0.9, disclosure_score)
+            print(f"Fallback disclosure calculation: {disclosure_score:.2f}")
+            return disclosure_score
+            
+    except Exception as e:
+        print(f"Critical error in disclosure calculation: {str(e)}")
+        return 0.5  # Default to neutral value
 
 def calculate_resource_interest(conversation):
-    """Calculates resource interest using metrics LLM."""
-    # Prepare the conversation history for analysis
-    formatted_history = "\n".join([msg["content"] for msg in conversation[-4:] if msg["role"] == "USER"])
-
-    # Create a prompt for the metrics LLM
-    prompt = f"""
-    Analyze the following conversation messages to determine resource interest.
-    Provide a score between 0 and 1 based on the expressed interest in resources.
-
-    CONTEXT:
-    Conversation History: {formatted_history}
-
-    TASK:
-    Return a JSON object with the resource interest score.
-    """
-
-    # Invoke the metrics LLM with the prompt
-    response = metrics_llm.invoke([SystemMessage(content="You are an expert in resource interest analysis."),
-                                   HumanMessage(content=prompt)])
-
-    # Extract the resource interest score from the response
-    resource_interest_score = json.loads(response.content).get("resource_interest", 0.5)
-
-    return resource_interest_score
+    """Calculate resource interest using LLM analysis with robust fallbacks."""
+    try:
+        # Extract recent user messages
+        user_messages = [msg["content"] for msg in conversation if msg["role"] == "USER"]
+        if not user_messages:
+            return 0.5
+            
+        # Use just the most recent messages
+        recent_messages = user_messages[-4:] if len(user_messages) >= 4 else user_messages
+        formatted_messages = "\n".join(recent_messages)
+        
+        # Create LLM prompt
+        prompt = f"""
+        Analyze these user messages for interest in receiving resources or links.
+        
+        USER MESSAGES:
+        {formatted_messages}
+        
+        Evaluate the user's expressed interest in:
+        - Learning more about topics discussed
+        - Receiving additional resources
+        - Exploring links or references
+        - Signs of curiosity or information-seeking
+        
+        Return a JSON object with:
+        - resource_interest: a number between 0 and 1
+        - reasoning: brief explanation of your rating
+        - topics_of_interest: list of topics the user seems interested in
+        
+        IMPORTANT: Return ONLY valid JSON with numeric scores.
+        """
+        
+        # Call the LLM
+        response = metrics_llm.invoke([
+            SystemMessage(content="You are a user interest analysis expert. Return ONLY valid JSON with a numeric resource_interest score."),
+            HumanMessage(content=prompt)
+        ])
+        
+        # Parse the response with robust error handling
+        try:
+            # Clean response text
+            cleaned_response = response.content.strip()
+            cleaned_response = re.sub(r'```json\s*|\s*```', '', cleaned_response)
+            
+            # Try JSON parsing first
+            try:
+                result = json.loads(cleaned_response)
+                interest_score = result.get("resource_interest", 0.5)
+                if not isinstance(interest_score, (int, float)) or interest_score < 0 or interest_score > 1:
+                    interest_score = 0.5
+                
+                print(f"Resource interest evaluation: {interest_score:.2f} - {result.get('reasoning', 'No reasoning')}")
+                
+                # Store topics of interest if available
+                if "topics_of_interest" in result and isinstance(result["topics_of_interest"], list):
+                    if "topics_of_interest" not in conversation_memory:
+                        conversation_memory["topics_of_interest"] = []
+                    conversation_memory["topics_of_interest"].extend(result["topics_of_interest"])
+                
+                return interest_score
+                
+            except json.JSONDecodeError:
+                # If JSON fails, look for numeric values
+                matches = re.findall(r'(\d+\.\d+|\d+)', cleaned_response)
+                if matches:
+                    for match in matches:
+                        score = float(match)
+                        if 0 <= score <= 1:
+                            print(f"Extracted interest score from text: {score:.2f}")
+                            return score
+            
+            # If all parsing fails, fall back to rule-based
+            raise ValueError("Could not parse LLM response")
+            
+        except Exception as e:
+            print(f"Error parsing resource interest from LLM: {str(e)}")
+            # Fall back to rule-based calculation
+            
+            # Base score
+            interest_score = 0.3
+            
+            # Interest keywords
+            interest_keywords = [
+                "resource", "link", "article", "video", "website", "read", "watch",
+                "share", "more info", "learn more", "interesting", "helpful", "useful",
+                "check out", "recommendation", "suggest", "more about"
+            ]
+            
+            # Calculate score
+            for msg in recent_messages:
+                msg_lower = msg.lower()
+                for keyword in interest_keywords:
+                    if keyword in msg_lower:
+                        interest_score += 0.1
+            
+            interest_score = min(0.9, interest_score)
+            print(f"Fallback interest calculation: {interest_score:.2f}")
+            return interest_score
+            
+    except Exception as e:
+        print(f"Critical error in resource interest calculation: {str(e)}")
+        return 0.5  # Default to neutral value
 
 def previous_stage(current):
     """Returns the previous conversation stage."""
@@ -1006,6 +1332,13 @@ IMPORTANT: Return ONLY valid JSON without any explanatory text or markdown forma
         cleaned_response = re.sub(r'```json\s*|\s*```', '', cleaned_response)
         
         try:
+            # Check if response is empty
+            if not cleaned_response or cleaned_response.isspace():
+                print("Warning: Empty response from LLM when generating link")
+                unique_id = str(int(time.time()))[-5:]
+                return f"@https://youtube.com/resource-{unique_id}"
+                
+            # Properly handle JSON parsing
             result = json.loads(cleaned_response)
             
             # Extract the URL path
@@ -1052,6 +1385,7 @@ IMPORTANT: Return ONLY valid JSON without any explanatory text or markdown forma
             
         except json.JSONDecodeError as e:
             print(f"Error parsing JSON from link generation response: {str(e)}")
+            print(f"Raw response content: '{cleaned_response}'")
             # Create a unique path based on timestamp
             unique_id = str(int(time.time()))[-5:]
             return f"@https://youtube.com/resource-{unique_id}"
@@ -1092,6 +1426,47 @@ def needs_refinement(initial: str, predicted: str, threshold: float = 0.5) -> bo
         return False
     similarity = len(initial_words & predicted_words) / len(initial_words | predicted_words)
     return similarity < threshold
+
+def get_current_resource_url():
+    """Get the most recently shown resource URL from the conversation."""
+    try:
+        # First try to get from conversation_memory
+        url = conversation_memory.get("current_resource_url")
+        if url:
+            print(f"Using stored URL: {url}")
+            return url
+        
+        # If not found, try to extract from the last message
+        for msg in reversed(conversation_memory["messages"]):
+            if msg["role"] == "INFLUENCER":
+                # Try to extract URL from the message content
+                match = re.search(r'@https://youtube\.com/([^\s\)\]]+)', msg["content"])
+                if match:
+                    full_url = f"https://youtube.com/{match.group(1)}"
+                    print(f"Extracted URL from message: {full_url}")
+                    return full_url
+                
+                # Try alternative format with markdown
+                match = re.search(r'\]\(https://youtube\.com/([^\)]+)\)', msg["content"])
+                if match:
+                    full_url = f"https://youtube.com/{match.group(1)}"
+                    print(f"Extracted URL from markdown: {full_url}")
+                    return full_url
+        
+        # If no URL found, check topic_analysis
+        if "topic_analysis" in conversation_memory and conversation_memory["topic_analysis"]:
+            latest_analysis = conversation_memory["topic_analysis"][-1]
+            if "url_path" in latest_analysis:
+                full_url = f"https://youtube.com/{latest_analysis['url_path']}"
+                print(f"Using URL from topic analysis: {full_url}")
+                return full_url
+                
+        print("No URL found, using default")
+        return "https://youtube.com/resource-default"
+        
+    except Exception as e:
+        print(f"Error retrieving resource URL: {str(e)}")
+        return "https://youtube.com/resource-default"
 
 #####################################
 # 7. Conversation Processing Function
@@ -1216,8 +1591,9 @@ def evaluate_response_quality(initial_response, predicted_reaction, conversation
     
     return (improvement_needed, improvements, ", ".join(reasoning))
 
-# Now modify the process_message function to use the evaluation
 def process_message(user_input):
+    display_url = None  # Initialize with default value
+
     try:
         print(f"Processing message: '{user_input}'")
         
@@ -1410,32 +1786,32 @@ This context is important for understanding the user's brief message. Make sure 
             
             # Enhanced refinement prompt that includes specific improvement areas
             refinement_prompt = f"""
-            You are the Influencer Agent.
-            User said: {user_input}
-            Initial response: {initial_response.content}
+You are the Influencer Agent.
+User said: {user_input}
+Initial response: {initial_response.content}
 
             IMPROVEMENTS NEEDED: 
             {evaluation_reasoning}
 
-            CURRENT CONVERSATION STAGE: {current_stage}
-            STAGE POLICY:
-            {stage_policy}
+CURRENT CONVERSATION STAGE: {current_stage}
+STAGE POLICY:
+{stage_policy}
 
-            USER COMMUNICATION STYLE GUIDANCE:
-            {style_guidance}
+USER COMMUNICATION STYLE GUIDANCE:
+{style_guidance}
 
-            IMPORTANT GUIDELINES:
-            1. Keep responses concise - aim for Twitter-length (140 characters) when possible
-            2. Be direct and to the point - chat interfaces are optimized for short bursts of text
-            3. LEAD WITH STATEMENTS - Start with observations, opinions, or experiences before asking questions
-            4. Mirror the user's message length - if they send short messages, keep yours brief too
-            5. If the user is giving very short responses, try a different approach to engage them
+IMPORTANT GUIDELINES:
+1. Keep responses concise - aim for Twitter-length (140 characters) when possible
+2. Be direct and to the point - chat interfaces are optimized for short bursts of text
+3. LEAD WITH STATEMENTS - Start with observations, opinions, or experiences before asking questions
+4. Mirror the user's message length - if they send short messages, keep yours brief too
+5. If the user is giving very short responses, try a different approach to engage them
             6. Address the specific improvements needed: {', '.join(improvement_areas)}
             7. Only respond to what the user has actually said, not what they might say
             8. Maintain continuity with the previous conversation
 
             Provide your revised response between <final_message> tags.
-            """
+"""
 
             refinement_response = influencer_llm.invoke([
                 SystemMessage(content=INFLUENCER_SYSTEM_PROMPT),
@@ -1460,6 +1836,9 @@ This context is important for understanding the user's brief message. Make sure 
         # After generating the final message, ensure it includes the link if in resource stage
         if is_resource_stage and display_url not in final_message:
             final_message = f"{final_message}\n\nI found this interesting video that explores these themes: {display_url}"
+        
+        conversation_memory["current_resource_url"] = display_url
+        print(f"Stored resource URL for click handler: {display_url}")
         
         # Store in conversation memory
         conversation_memory["messages"].append({
@@ -1698,13 +2077,21 @@ def update_stage_display(current_stage):
     Returns:
         str: HTML string representing the progress bar
     """
+    # Make sure this matches your actual CONVERSATION_STAGES values
     stages = [
         {"id": "INITIAL_ENGAGEMENT", "name": "Initial Engagement", "position": 1},
         {"id": "RAPPORT_BUILDING", "name": "Building Rapport", "position": 2},
         {"id": "TRUST_DEVELOPMENT", "name": "Developing Trust", "position": 3},
         {"id": "LINK_INTRODUCTION", "name": "Resource Sharing", "position": 4},
-        {"id": "GOAL_COMPLETION", "name": "Completion", "position": 5}
+        {"id": "LINK_REINFORCEMENT", "name": "Link Follow-up", "position": 5},
+        {"id": "SESSION_COMPLETION", "name": "Completion", "position": 6}
     ]
+    
+    # Fix for stage mapping - ensure current_stage is always valid
+    stage_ids = [s["id"] for s in stages]
+    if current_stage not in stage_ids:
+        print(f"Warning: Unknown stage '{current_stage}'. Defaulting to first stage.")
+        current_stage = stage_ids[0]
     
     # Find current stage position
     current_position = 1
@@ -1717,6 +2104,9 @@ def update_stage_display(current_stage):
     
     # Calculate progress percentage (for the progress bar width)
     progress_percentage = ((current_position - 1) / (len(stages) - 1)) * 100
+    
+    # Debug output to help identify issues
+    print(f"Stage display - Current: {current_stage}, Position: {current_position}, Progress: {progress_percentage}%")
     
     # Generate HTML
     html = '<div class="stage-progress">'
@@ -1754,7 +2144,7 @@ setTimeout(() => {
 
 def save_conversation(conversation_data, filename=None):
     """
-    Save conversation data to JSON files in a dedicated session folder.
+    Save conversation data to JSON files in a dedicated session folder with refinement statistics.
     
     Args:
         conversation_data (dict): Conversation data to save
@@ -1784,9 +2174,48 @@ def save_conversation(conversation_data, filename=None):
         twin_filename = os.path.join(session_folder, f"{base_name}_twin.json")
         influencer_filename = os.path.join(session_folder, f"{base_name}_influencer.json")
     
-    # Save main conversation data
+    # Calculate refinement statistics
+    refinement_stats = {
+        "total_responses": len([m for m in conversation_memory["messages"] if m["role"] == "INFLUENCER"]),
+        "refined_responses": len([m for m in conversation_memory["messages"] 
+                               if m["role"] == "INFLUENCER" and 
+                               m.get("refinement_data", {}).get("was_refined", False)]),
+        "refinement_reasons": {}
+    }
+    
+    # Calculate refinement rate
+    if refinement_stats["total_responses"] > 0:
+        refinement_stats["refinement_rate"] = refinement_stats["refined_responses"] / refinement_stats["total_responses"]
+    else:
+        refinement_stats["refinement_rate"] = 0.0
+    
+    # Collect statistics on refinement reasons
+    for msg in conversation_memory["messages"]:
+        if msg["role"] == "INFLUENCER" and msg.get("refinement_data", {}).get("was_refined", False):
+            reasons = msg["refinement_data"].get("reasoning", "")
+            for reason in reasons.split(", "):
+                if reason:
+                    refinement_stats["refinement_reasons"][reason] = refinement_stats["refinement_reasons"].get(reason, 0) + 1
+    
+    # Create enhanced conversation data with refinement information
+    enhanced_conversation_data = conversation_data.copy() if isinstance(conversation_data, dict) else {"conv": conversation_data}
+    enhanced_conversation_data["refinement_stats"] = refinement_stats
+    enhanced_conversation_data["metrics_history"] = conversation_memory.get("metrics_history", [])
+
+    # Include detailed message history with refinement data
+    enhanced_conversation_data["detailed_messages"] = [
+        {
+            "role": msg["role"],
+            "content": msg["content"],
+            "timestamp": msg.get("timestamp", ""),
+            "refinement": msg.get("refinement_data", {"was_refined": False})
+        }
+        for msg in conversation_memory["messages"]
+    ]
+    
+    # Save the enhanced conversation data to the main file
     with open(main_filename, 'w') as f:
-        json.dump(conversation_data, f, indent=2)
+        json.dump(enhanced_conversation_data, f, indent=2)
     
     # Save digital twin memory to a separate file
     twin_data = {
@@ -1800,8 +2229,10 @@ def save_conversation(conversation_data, filename=None):
     # Save influencer memory to a separate file
     influencer_data = {
         "conversation_memory": conversation_memory,
-        "metrics": get_quality_metrics()
+        "metrics": get_quality_metrics(),
+        "refinement_stats": refinement_stats
     }
+    influencer_data["metrics_history"] = conversation_memory.get("metrics_history", [])
     with open(influencer_filename, 'w') as f:
         json.dump(influencer_data, f, indent=2)
     
@@ -1817,7 +2248,8 @@ def save_conversation(conversation_data, filename=None):
         "metrics_summary": {
             "messages_count": len(conversation_memory["messages"]),
             "final_stage": conversation_memory["current_stage"],
-            "link_clicks": conversation_memory["link_clicks"]
+            "link_clicks": conversation_memory["link_clicks"],
+            "refinement_rate": f"{refinement_stats['refinement_rate']:.2%}"
         }
     }
     session_info_filename = os.path.join(session_folder, "session_info.json")
@@ -1825,6 +2257,8 @@ def save_conversation(conversation_data, filename=None):
         json.dump(session_info, f, indent=2)
     
     print(f"Session saved to folder: {session_folder}")
+    print(f"Refinement stats: {refinement_stats['refined_responses']}/{refinement_stats['total_responses']} messages refined ({refinement_stats['refinement_rate']:.2%})")
+    
     return main_filename
 
 def add_user_message(user_message, chat_history, state):
@@ -1928,7 +2362,7 @@ def process_and_update(user_message, chat_history, state):
         resource_stages = ["LINK_INTRODUCTION", "LINK_REINFORCEMENT", "SESSION_COMPLETION"]
         is_resource_stage = current_stage in resource_stages
         
-        # Update UI state - ensure proper labeling for system messages
+        # Update UI state
         for i in range(len(state["conv"]) - 1, -1, -1):
             if state["conv"][i][1] is None:
                 state["conv"][i] = (state["conv"][i][0], f"SYSTEM: {response}")
@@ -1946,23 +2380,36 @@ def process_and_update(user_message, chat_history, state):
             "youtube.com/relationship-building-tips" in response
         ])
         
-        debug_info = {
-            "conversation_state": state["conv"],
-            "chat_history": chat_history,
-            "final_response": response,
-            "is_resource_stage": is_resource_stage,
-            "has_link": has_link,
-            "current_stage": current_stage
-        }
+        # THIS IS WHERE THE ERROR OCCURS - Fix it to handle non-serializable objects:
+        try:
+            # Create a simplified debug info to avoid serialization issues
+            simplified_debug_info = {
+                "final_response": response,
+                "is_resource_stage": is_resource_stage,
+                "has_link": has_link,
+                "current_stage": current_stage
+            }
+            
+            # Safely convert to JSON
+            debug_info_json = json.dumps(simplified_debug_info)
+            
+            return (
+                chat_history, 
+                state, 
+                debug_info_json,
+                update_stage_display(current_stage),  # Make sure this is called with the correct stage
+                gr.update(value="", interactive=True)
+            )
+        except Exception as e:
+            print(f"DEBUG - Error creating debug info JSON: {str(e)}")
+            return (
+                chat_history, 
+                state, 
+                json.dumps({"error": str(e), "is_resource_stage": False, "has_link": False}), 
+                update_stage_display(current_stage),
+                gr.update(value="", interactive=True)
+            )
         
-        # Clear the textbox properly using gr.update()
-        return (
-            chat_history, 
-            state, 
-            json.dumps(debug_info), 
-            update_stage_display(current_stage),
-            gr.update(value="", interactive=True)  # Clear textbox and ensure it's interactive
-        )
     except Exception as e:
         error_msg = f"Error: {str(e)}"
         print(f"DEBUG - Error in processing: {error_msg}")
@@ -1974,6 +2421,20 @@ def process_and_update(user_message, chat_history, state):
             gr.update(interactive=True)  # Ensure textbox remains interactive even after error
         )
 
+# Add helper function to process link click result
+def process_link_click_result(debug_json, state, chat_history):
+    try:
+        debug_data = json.loads(debug_json)
+        if "message" in debug_data:
+            # Add link click message to state
+            state["conv"].append((None, debug_data["message"]))
+            # Add a simplified version to chat history
+            chat_history.append((None, "You clicked on the resource link."))
+        return state, chat_history
+    except Exception as e:
+        print(f"Error processing link click: {str(e)}")
+        return state, chat_history
+    
 #####################################
 # 12. Build the Gradio Interface
 #####################################
@@ -2046,6 +2507,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     with gr.Row():
         with gr.Column(scale=2):
             chatbot = gr.Chatbot(label="Conversation", elem_id="chatbox", height=400)
+            link_url_input = gr.Textbox(visible=False, label="Resource URL")
             with gr.Row():
                 msg = gr.Textbox(
                     label="Your Message",
@@ -2068,6 +2530,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
                 with gr.TabItem("Digital Twin Memory"):
                     digital_twin_memory_display = gr.JSON(label="Digital Twin Memory")
                     regenerate_bio_btn = gr.Button("Regenerate User Biography")
+                
     # Feedback textbox and submit button, initially hidden
     feedback = gr.Textbox(label="Feedback", placeholder="Enter your feedback here...", visible=False)
     submit_feedback = gr.Button("Submit Feedback", scale=1, visible=False)
@@ -2218,35 +2681,42 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         outputs=[log_content]
     )
     
+    # Corrected link_click.click() handler:
+    # Replace your existing link_click.click() chain with this one:
     link_click.click(
-        lambda: gr.update(interactive=False, value="Processing...", variant="secondary"),  # Show loading state
-        inputs=None,
+        lambda _: gr.update(interactive=False, value="Processing...", variant="secondary"),
+        inputs=[link_click],
         outputs=[link_click]
     ).then(
-        lambda: handle_link_click("https://youtube.com/relationship-building-tips"),
+        get_current_resource_url,  # Get the current URL first
+        outputs=[link_url_input]  # Store in hidden textbox
+    ).then(
+        handle_link_click,  # Use the URL from the hidden textbox
+        inputs=[link_url_input],
         outputs=[debug_output]
     ).then(
-        # Function to add the link click message to the conversation
-        lambda debug_json: process_link_click_result(debug_json, conversation_state.value, chatbot.value),
+        process_link_click_result,
         inputs=[debug_output, conversation_state, chatbot],
         outputs=[conversation_state, chatbot]
     ).then(
-        lambda: gr.update(visible=True, value="Thank you for visiting the resource! Would you like to share your thoughts about it?"),
+        lambda _: gr.update(visible=True, placeholder="Thank you for visiting the resource! Would you like to share your thoughts about it?"),
+        inputs=[feedback],
         outputs=[feedback]
     ).then(
-        lambda: gr.update(visible=True),
+        lambda _: gr.update(visible=True),
+        inputs=[submit_feedback],
         outputs=[submit_feedback]
     ).then(
-        lambda: gr.update(interactive=False, value="Visit Resource", variant="secondary"),  # Reset button appearance
-        inputs=None,
+        lambda _: gr.update(interactive=False, value="Visit Resource", variant="secondary"),
+        inputs=[link_click],
         outputs=[link_click]
     ).then(
-        lambda: gr.update(interactive=False, placeholder="Conversation completed. Please provide feedback."),  # Disable send button
-        inputs=None,
+        lambda _: gr.update(interactive=False, placeholder="Conversation completed. Please provide feedback."),
+        inputs=[msg],
         outputs=[msg]
     ).then(
-        lambda: gr.update(interactive=False),  # Disable send button
-        inputs=None,
+        lambda _: gr.update(interactive=False),
+        inputs=[send],
         outputs=[send]
     )
     
@@ -2279,103 +2749,261 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     
     # Helper function to determine next stage based on context
     def determine_next_stage(current_stage, user_input, influencer_response, click_detected=False):
-        """Determine the next conversation stage based on context, trust metrics, and conversation dynamics."""
-        # Handle explicit stage transitions
-        if click_detected:
-            return "SESSION_COMPLETION"
-        
-        current = conversation_memory["current_stage"]
-        messages_count = len(conversation_memory["messages"])
-        
-        # Get enhanced metrics
-        engagement_depth = calculate_engagement_depth(user_input, conversation_memory["messages"])
-        substantive_ratio = calculate_substantive_ratio(conversation_memory["messages"])
-        word_count = len(user_input.split())
-        
-        # Calculate trust with enhanced algorithm
-        trust_score = calculate_user_trust_score(user_input, influencer_response)
-        
-        # Store trust score for analysis
-        conversation_memory["trust_scores"].append({
-            "score": trust_score,
-            "message_count": messages_count,
-            "timestamp": datetime.datetime.now().isoformat(),
-            "engagement_metrics": get_quality_metrics()
-        })
-        
-        print(f"METRICS - Trust: {trust_score:.2f}, Engagement: {engagement_depth:.2f}, Substantive: {substantive_ratio:.2f}, Words: {word_count}")
-        
-        # Check for regression conditions - fallback to earlier stages if engagement drops
-        if len(conversation_memory["engagement_depth"]["history"]) >= 3:
-            # Get last three engagement scores
-            recent_scores = conversation_memory["engagement_depth"]["history"][-3:]
-            # If declining engagement pattern detected, consider regression
-            if recent_scores[2] < recent_scores[0] and recent_scores[2] < recent_scores[1]:
-                engagement_drop = recent_scores[0] - recent_scores[2]
-                # Significant engagement drop triggers regression
-                if engagement_drop > 0.3 and current not in ["INITIAL_ENGAGEMENT", "RAPPORT_BUILDING"]:
-                    print(f"Engagement regression detected: {engagement_drop:.2f}. Moving back a stage.")
-                    return previous_stage(current)
-        
-        # Stage transition logic with quality gates
-        if current == "INITIAL_ENGAGEMENT":
-            # Require at least 2 substantive exchanges but lower engagement threshold
-            if (messages_count >= 4 and engagement_depth > 0.2 and 
-                word_count > 4 and substantive_ratio > 0.3 and trust_score > 0.1):
-                print("Stage criteria met: INITIAL_ENGAGEMENT -> RAPPORT_BUILDING")
+        """Determine next stage using LLM holistic analysis with robust fallbacks."""
+        try:
+            # Handle explicit stage transitions
+            if click_detected:
+                print("Link detected in message - advancing to SESSION_COMPLETION")
+                return "SESSION_COMPLETION"
+            
+            current = conversation_memory["current_stage"]
+            messages_count = len(conversation_memory["messages"])
+            
+            # Extract relevant conversation context
+            recent_messages = conversation_memory["messages"][-6:] if len(conversation_memory["messages"]) >= 6 else conversation_memory["messages"]
+            formatted_history = "\n".join([
+                f"{msg['role']}: {msg['content']}" 
+                for msg in recent_messages
+            ])
+            
+            # Get current trust and engagement metrics to include
+            try:
+                trust_score = calculate_user_trust_score(user_input, influencer_response)
+                engagement_score = calculate_engagement_depth(user_input, conversation_memory["messages"])
+                
+                # Store trust score for analysis
+                conversation_memory["trust_scores"].append({
+                    "score": trust_score,
+                    "message_count": messages_count,
+                    "timestamp": datetime.datetime.now().isoformat()
+                })
+            except Exception as e:
+                print(f"Error calculating metrics: {str(e)}")
+                trust_score = 0.5
+                engagement_score = 0.5
+                
+            print(f"METRICS - Trust: {trust_score:.2f}, Engagement: {engagement_score:.2f}, Messages: {messages_count}")
+            
+            # Create stages list with descriptions
+            stages_info = ""
+            for stage_id, stage_data in CONVERSATION_STAGES.items():
+                stages_info += f"- {stage_id}: {stage_data['description']}\n"
+                
+            # Create LLM prompt for stage analysis
+            prompt = f"""
+            Analyze this conversation to determine the appropriate conversation stage.
+            
+            RECENT CONVERSATION:
+            {formatted_history}
+            
+            CURRENT USER MESSAGE:
+            "{user_input}"
+            
+            CURRENT METRICS:
+            - Current stage: {current}
+            - Messages exchanged: {messages_count}
+            - Trust score: {trust_score:.2f}/1.0
+            - Engagement score: {engagement_score:.2f}/1.0
+            
+            AVAILABLE STAGES:
+            {stages_info}
+            
+            PROGRESSION RULES:
+            - Always move forward through stages (never go backwards)
+            - INITIAL_ENGAGEMENT → RAPPORT_BUILDING requires basic trust (>0.3) and at least 3 messages
+            - RAPPORT_BUILDING → TRUST_DEVELOPMENT requires personal disclosure and >5 messages
+            - TRUST_DEVELOPMENT → LINK_INTRODUCTION requires sustained engagement and >7 messages
+            - LINK_INTRODUCTION → LINK_REINFORCEMENT happens when a link is introduced
+            - LINK_REINFORCEMENT → SESSION_COMPLETION happens after link interaction
+            
+            Return a JSON object with:
+            - next_stage: recommended next stage (can be current stage if no change needed)
+            - confidence: number between 0-1 indicating confidence in recommendation
+            - reasoning: brief explanation for your decision
+            
+            If you're unsure, keep the current stage ({current}) as next_stage.
+            
+            IMPORTANT: Return ONLY valid JSON with the next_stage as one of the exact stage names listed.
+            """
+            
+            # Call the LLM for stage analysis
+            response = metrics_llm.invoke([
+                SystemMessage(content=f"You are a conversation flow expert. Return ONLY valid JSON with next_stage as one of: {', '.join(CONVERSATION_STAGES.keys())}"),
+                HumanMessage(content=prompt)
+            ])
+            
+            # Parse the response with robust error handling
+            try:
+                # Clean response text
+                cleaned_response = response.content.strip()
+                cleaned_response = re.sub(r'```json\s*|\s*```', '', cleaned_response)
+                
+                # Try JSON parsing
+                try:
+                    result = json.loads(cleaned_response)
+                    next_stage = result.get("next_stage", current)
+                    confidence = result.get("confidence", 0.5)
+                    reasoning = result.get("reasoning", "No reasoning provided")
+                    
+                    # Validate stage name
+                    if next_stage not in CONVERSATION_STAGES:
+                        print(f"Invalid stage name '{next_stage}', defaulting to current stage")
+                        next_stage = current
+                    
+                    # Only accept progression (not regression)
+                    current_id = CONVERSATION_STAGES[current]["id"]
+                    next_id = CONVERSATION_STAGES[next_stage]["id"]
+                    
+                    if next_id < current_id:
+                        print(f"Rejected stage regression from {current} to {next_stage}")
+                        next_stage = current
+                    elif next_id > current_id:
+                        print(f"Stage progression: {current} → {next_stage} (confidence: {confidence:.2f})")
+                        print(f"Reasoning: {reasoning}")
+                        
+                    return next_stage
+                    
+                except (json.JSONDecodeError, KeyError) as e:
+                    print(f"Error parsing stage recommendation: {str(e)}")
+                    raise ValueError("Could not parse LLM stage recommendation")
+                    
+            except Exception as e:
+                print(f"Error in LLM stage analysis, using fallback logic: {str(e)}")
+                # Fall back to rule-based stage progression
+            
+            # FALLBACK: Force progression based on message count
+            if current == "INITIAL_ENGAGEMENT" and messages_count >= 4:
+                print("Force progressing from INITIAL_ENGAGEMENT due to message count")
                 return "RAPPORT_BUILDING"
-            
-        elif current == "RAPPORT_BUILDING":
-            # Require sustained engagement and personal disclosure
-            personal_disclosure = calculate_personal_disclosure(conversation_memory["messages"])
-            if (messages_count >= 6 and engagement_depth > 0.2 and 
-                personal_disclosure > 0.2 and trust_score > 0.2):
-                print("Stage criteria met: RAPPORT_BUILDING -> TRUST_DEVELOPMENT")
+                
+            elif current == "RAPPORT_BUILDING" and messages_count >= 8:
+                print("Force progressing from RAPPORT_BUILDING due to message count")
                 return "TRUST_DEVELOPMENT"
-            
-        elif current == "TRUST_DEVELOPMENT":
-            # Require demonstrated interest in resources
-            resource_interest = calculate_resource_interest(conversation_memory["messages"])
-            if (messages_count >= 8 and engagement_depth > 0.3 and 
-                resource_interest > 0.3 and trust_score > 0.3):
-                print("Stage criteria met: TRUST_DEVELOPMENT -> LINK_INTRODUCTION")
+                
+            elif current == "TRUST_DEVELOPMENT" and messages_count >= 12:
+                print("Force progressing from TRUST_DEVELOPMENT due to message count")
                 return "LINK_INTRODUCTION"
-            
-        elif current == "LINK_INTRODUCTION" and "http" in influencer_response:
-            # Check for sufficient user consideration time
-            if get_message_response_time() > 5 and trust_score > 0.4:
-                print("Stage criteria met: LINK_INTRODUCTION -> LINK_REINFORCEMENT")
+                
+            elif current == "LINK_INTRODUCTION" and (messages_count >= 16 or "http" in influencer_response):
+                print("Force progressing from LINK_INTRODUCTION due to message count or link")
                 return "LINK_REINFORCEMENT"
-        
-        # Debug log for stage metrics
-        print(f"STAGE METRICS - Current stage: {current}, Messages: {messages_count}, Engagement: {engagement_depth:.2f}, Trust: {trust_score:.2f}")
-        if current == "RAPPORT_BUILDING":
-            personal_disclosure = calculate_personal_disclosure(conversation_memory["messages"])
-            print(f"  Personal disclosure: {personal_disclosure:.2f} (threshold: 0.2)")
-        elif current == "TRUST_DEVELOPMENT":
-            resource_interest = calculate_resource_interest(conversation_memory["messages"])
-            print(f"  Resource interest: {resource_interest:.2f} (threshold: 0.4)")
-        
-        # No change in stage
-        return current
+            
+            elif current == "LINK_REINFORCEMENT" and messages_count >= 20:
+                print("Force progressing to SESSION_COMPLETION due to message count")
+                return "SESSION_COMPLETION"
+                
+            # No change
+            return current
+                
+        except Exception as e:
+            print(f"Critical error in determine_next_stage: {str(e)}")
+            # Force basic progression on severe error
+            if messages_count >= 5 and current == "INITIAL_ENGAGEMENT":
+                return "RAPPORT_BUILDING"
+            elif messages_count >= 10 and current == "RAPPORT_BUILDING":
+                return "TRUST_DEVELOPMENT"
+            elif messages_count >= 15:
+                return "LINK_INTRODUCTION"
+            return current  # Return unchanged if error
 
     # Modified calculate_user_trust_score to use LLM
     def calculate_user_trust_score(user_input: str, influencer_response: str) -> float:
-        """Calculate trust score using LLM analysis"""
-        metrics = analyze_message_with_llm(user_input, conversation_memory["messages"], conversation_memory["current_stage"])
-        
-        # Extract trust indicators
-        trust_metrics = metrics.get("trust_indicators", {})
-        
-        # Calculate weighted trust score
-        trust_score = (
-            trust_metrics.get("sentiment_score", 0.5) * 0.25 +
-            trust_metrics.get("authenticity_score", 0.5) * 0.25 +
-            trust_metrics.get("engagement_pattern", 0.5) * 0.25 +
-            trust_metrics.get("linguistic_style_match", 0.5) * 0.25
-        )
-        
-        return max(0.0, min(1.0, trust_score))
+        """Calculate trust score primarily using LLM analysis."""
+        try:
+            # Create a focused prompt for trust analysis
+            prompt = f"""
+            Analyze this user message and calculate a trust score.
+            
+            USER MESSAGE: "{user_input}"
+            SYSTEM RESPONSE: "{influencer_response}"
+            CONVERSATION STAGE: {conversation_memory["current_stage"]}
+            
+            Consider:
+            - Sentiment (positive/negative language)
+            - Engagement level (detailed vs brief responses)
+            - Self-disclosure (sharing personal information)
+            - Response to system's content
+            
+            Return a JSON object with these fields:
+            - trust_score: a number between 0 and 1
+            - reasoning: brief explanation
+            
+            IMPORTANT: Return ONLY valid JSON with numeric scores between 0-1. NO explanatory text or markdown formatting.
+            """
+            
+            # Call the LLM with a strong structure enforcement
+            response = metrics_llm.invoke([
+                SystemMessage(content="You are a trust evaluation expert. Return ONLY valid JSON with a numeric trust_score between 0 and 1."),
+                HumanMessage(content=prompt)
+            ])
+            
+            # Handle the response with robust parsing
+            try:
+                # Clean response text
+                cleaned_response = response.content.strip()
+                cleaned_response = re.sub(r'```json\s*|\s*```', '', cleaned_response)
+                
+                # Try JSON parsing first
+                try:
+                    result = json.loads(cleaned_response)
+                    trust_score = result.get("trust_score", 0.5)
+                    # Verify score is numeric and in range
+                    if not isinstance(trust_score, (int, float)) or trust_score < 0 or trust_score > 1:
+                        trust_score = 0.5
+                    
+                    print(f"Trust evaluation: {trust_score:.2f} - {result.get('reasoning', 'No reasoning provided')}")
+                    return trust_score
+                    
+                except json.JSONDecodeError:
+                    # If JSON fails, look for numeric values
+                    matches = re.findall(r'(\d+\.\d+|\d+)', cleaned_response)
+                    if matches:
+                        for match in matches:
+                            score = float(match)
+                            if 0 <= score <= 1:
+                                print(f"Extracted trust score from text: {score:.2f}")
+                                return score
+                
+                # If all parsing fails, fall back to rule-based
+                raise ValueError("Could not parse LLM response")
+                    
+            except Exception as e:
+                print(f"Error parsing trust score from LLM: {str(e)}")
+                # Fall back to rule-based calculation
+                
+                # Simple trust indicators
+                word_count = len(user_input.split())
+                sentiment_score = 0.5
+                
+                # Positive and negative indicators
+                positive_words = ["thanks", "good", "great", "interesting", "like", "appreciate"]
+                negative_words = ["no", "not", "don't", "boring", "uninteresting"]
+                
+                for word in positive_words:
+                    if word in user_input.lower():
+                        sentiment_score += 0.1
+                        
+                for word in negative_words:
+                    if word in user_input.lower():
+                        sentiment_score -= 0.1
+                
+                # Engagement indicators
+                engagement_score = min(0.9, word_count / 30)
+                disclosure_score = 0.5
+                for phrase in ["i feel", "i think", "i believe", "my", "i'm", "i've"]:
+                    if phrase in user_input.lower():
+                        disclosure_score += 0.1
+                
+                # Combine scores
+                trust_score = (sentiment_score * 0.4) + (engagement_score * 0.3) + (disclosure_score * 0.3)
+                trust_score = max(0.1, min(0.9, trust_score))
+                
+                print(f"Fallback trust calculation: {trust_score:.2f}")
+                return trust_score
+                
+        except Exception as e:
+            print(f"Critical error in trust calculation: {str(e)}")
+            return 0.5  # Default to neutral score
 
 # Add missing functions for response time tracking
 def track_response_timestamp():
@@ -2475,16 +3103,32 @@ def analyze_linguistic_accommodation(user_input, bot_response):
     return (word_overlap * 0.7) + (func_word_match * 0.3)
 
 def update_conversation_stage(next_stage):
-    """Update the conversation stage in memory and record in stage history if changed."""
-    current = conversation_memory.get("current_stage", "INITIAL_ENGAGEMENT")
-    
-    # Only update if the stage has actually changed
-    if next_stage != current:
-        conversation_memory["current_stage"] = next_stage
-        conversation_memory["stage_history"].append(next_stage)
-        print(f"Stage transition: {current} -> {next_stage}")
-    
-    return next_stage
+    """Update the conversation stage with robust error handling."""
+    try:
+        current = conversation_memory.get("current_stage", "INITIAL_ENGAGEMENT")
+        
+        # Only update if the stage has actually changed
+        if next_stage != current:
+            print(f"Stage transition: {current} -> {next_stage}")
+            conversation_memory["current_stage"] = next_stage
+            
+            # Initialize stage_history if needed
+            if "stage_history" not in conversation_memory:
+                conversation_memory["stage_history"] = []
+                
+            # Add to history
+            conversation_memory["stage_history"].append(next_stage)
+            
+            # Update UI immediately with new stage
+            stage_display = update_stage_display(next_stage)
+            print(f"Updated stage display for: {next_stage}")
+        
+        return next_stage
+        
+    except Exception as e:
+        print(f"Error in update_conversation_stage: {str(e)}")
+        # Return the stage even if we couldn't update memory
+        return next_stage
 
 # Force regeneration of user biography
 def regenerate_user_biography():
@@ -2629,31 +3273,28 @@ Analyze the following message to determine if the user is agreeing to see a link
 Message: "{user_message}"
 
 TASK:
-Return "true" if the user agrees to see a link, otherwise return "false".
+RETURN ONLY THE WORD "true" OR "false" WITHOUT ANY EXPLANATION OR ADDITIONAL TEXT.
 """
     try:
         response = metrics_llm.invoke([
-            SystemMessage(content="You are an expert in conversation analysis."),
+            SystemMessage(content="You are an expert in conversation analysis. You MUST respond with ONLY a single word: either 'true' or 'false'."),
             HumanMessage(content=prompt)
         ])
-        return response.content.strip().lower() == "true"
+        
+        # Extract just true/false from potentially verbose response
+        response_text = response.content.strip().lower()
+        print(f"User agreement response: {response_text}")
+        
+        # Check if "true" appears in the response (more lenient matching)
+        if "true" in response_text and "false" not in response_text:
+            return True
+        else:
+            return False
     except Exception as e:
         print(f"Error analyzing user agreement: {str(e)}")
         return False
 
-# Add helper function to process link click result
-def process_link_click_result(debug_json, state, chat_history):
-    try:
-        debug_data = json.loads(debug_json)
-        if "message" in debug_data:
-            # Add link click message to state
-            state["conv"].append((None, debug_data["message"]))
-            # Add a simplified version to chat history
-            chat_history.append((None, "You clicked on the resource link."))
-        return state, chat_history
-    except Exception as e:
-        print(f"Error processing link click: {str(e)}")
-        return state, chat_history
+
     
 if __name__ == "__main__":
     print(f"API Key exists: {os.environ.get('NEBIUS_API_KEY') is not None}")
