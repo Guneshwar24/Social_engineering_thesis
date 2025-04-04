@@ -277,32 +277,79 @@ def analyze_response_timing():
     return timing_score
 
 def extract_main_topic(text):
-    """Extract the main topic from a message to track conversation themes."""
+    """Extract the main topic from a message using LLM analysis."""
     if not text or len(text) < 10:
-        return "general"  # Default to a general topic if none found
+        return "general"  # Default to a general topic if text is too short
+    
+    # Create prompt for LLM analysis
+    prompt = f"""
+    Analyze the following message and extract the main topic being discussed.
+    
+    MESSAGE:
+    "{text}"
+    
+    TASK:
+    1. Identify the central topic or theme of this message
+    2. Return a concise topic label (1-5 words maximum)
+    3. Make sure the topic is specific enough to track conversation flow
+    4. Do not include any explanations or analysis
+    
+    Return ONLY the topic label as a short phrase, with no additional text, quotes, or formatting.
+    """
+    
+    try:
+        # Use metrics_llm for topic extraction
+        response = metrics_llm.invoke([
+            SystemMessage(content="You are an expert topic extractor. Extract only the main topic from the given text without any other explanation."),
+            HumanMessage(content=prompt)
+        ])
         
-    # Simple topic extraction based on key phrases and question patterns
-    if "?" in text:
-        question_match = re.search(r'(?:what|how|why|when|where|who|tell me about|do you)\s+(?:is|are|was|were|do|does|did|can|could|would|should)?\s*(.+?)\?', text.lower())
-        if question_match:
-            topic = question_match.group(1).strip()
-            topic = re.sub(r'^(the|a|an)\s+', '', topic)
-            words = topic.split()
-            if len(words) > 4:
-                topic = ' '.join(words[:4]) + '...'
-            return topic
-    
-    sentences = re.split(r'[.!?]', text)
-    if sentences:
-        main_sentence = max(sentences, key=len).strip()
-        if len(main_sentence) > 10:
-            words = main_sentence.split()
-            if len(words) > 6:
-                topic = ' '.join(words[:6]) + '...'
+        # Clean and process the response
+        topic = response.content.strip()
+        
+        # Remove any quotation marks or formatting
+        topic = re.sub(r'^["\']|["\']$', '', topic)
+        
+        # Truncate if too long (max 40 chars)
+        if len(topic) > 40:
+            # Try to find a good break point
+            break_point = topic[:40].rfind(' ')
+            if break_point > 0:
+                topic = topic[:break_point] + "..."
+            else:
+                topic = topic[:40] + "..."
+        
+        # If LLM returned nothing useful, use a fallback
+        if not topic or len(topic) < 2:
+            return "general"
+            
+        return topic
+        
+    except Exception as e:
+        print(f"Error extracting topic with LLM: {str(e)}")
+        
+        # Fallback to simple regex-based extraction if LLM fails
+        if "?" in text:
+            question_match = re.search(r'(?:what|how|why|when|where|who|tell me about|do you)\s+(?:is|are|was|were|do|does|did|can|could|would|should)?\s*(.+?)\?', text.lower())
+            if question_match:
+                topic = question_match.group(1).strip()
+                topic = re.sub(r'^(the|a|an)\s+', '', topic)
+                words = topic.split()
+                if len(words) > 4:
+                    topic = ' '.join(words[:4]) + '...'
                 return topic
-            return main_sentence[:40] + ('...' if len(main_sentence) > 40 else '')
-    
-    return "general"  # Default to a general topic if none found
+        
+        sentences = re.split(r'[.!?]', text)
+        if sentences:
+            main_sentence = max(sentences, key=len).strip()
+            if len(main_sentence) > 10:
+                words = main_sentence.split()
+                if len(words) > 6:
+                    topic = ' '.join(words[:6]) + '...'
+                    return topic
+                return main_sentence[:40] + ('...' if len(main_sentence) > 40 else '')
+        
+        return "general"  # Default to a general topic if extraction fails
 
 def get_default_metrics() -> dict:
     """Provide default metrics when LLM analysis fails"""
@@ -3074,33 +3121,93 @@ def analyze_engagement_patterns():
     return (length_trend * 0.6) + (question_score * 0.4)
 
 def analyze_linguistic_accommodation(user_input, bot_response):
-    """Measure degree of linguistic style matching between user and bot."""
+    """Measure linguistic style matching between user and bot using LLM analysis."""
     if not user_input or not bot_response:
         return 0.5
+    
+    # Create prompt for LLM analysis
+    prompt = f"""
+    Analyze the linguistic style matching between a user message and an AI response.
+    
+    USER MESSAGE:
+    "{user_input}"
+    
+    AI RESPONSE:
+    "{bot_response}"
+    
+    TASK:
+    1. Calculate how well the AI's response accommodates and matches the user's linguistic style
+    2. Consider: sentence length, complexity, formality level, vocabulary choice, emotional tone
+    3. Return a single accommodation score between 0.0 and 1.0 where:
+       - 0.0 = No accommodation (completely different styles)
+       - 0.5 = Moderate accommodation
+       - 1.0 = Perfect accommodation (styles match very closely)
+    
+    Return ONLY a numeric score between 0.0 and 1.0 with no additional text or explanation.
+    """
+    
+    try:
+        # Use metrics_llm for accommodation analysis
+        response = metrics_llm.invoke([
+            SystemMessage(content="You are an expert in linguistic style analysis. Provide ONLY a numeric score between 0.0 and 1.0 with no other text."),
+            HumanMessage(content=prompt)
+        ])
         
-    # Convert to lowercase for comparison
-    user_lower = user_input.lower()
-    bot_lower = bot_response.lower()
+        # Extract numeric score
+        cleaned_response = response.content.strip()
+        
+        # Try to parse a floating point number
+        try:
+            score = float(cleaned_response)
+            
+            # Ensure score is in valid range
+            if 0.0 <= score <= 1.0:
+                return score
+        except ValueError:
+            # If we can't parse a float directly, try to extract a number using regex
+            match = re.search(r'(\d+\.\d+|\d+)', cleaned_response)
+            if match:
+                try:
+                    score = float(match.group(1))
+                    return max(0.0, min(1.0, score))  # Clamp between 0 and 1
+                except ValueError:
+                    pass
+        
+        # If we reach here, we couldn't extract a valid score
+        print(f"Could not extract valid accommodation score from: {cleaned_response}")
+        
+    except Exception as e:
+        print(f"Error analyzing linguistic accommodation with LLM: {str(e)}")
     
-    # Extract features for comparison
-    user_words = set(user_lower.split())
-    bot_words = set(bot_lower.split())
+    # Fallback to rule-based method if LLM fails
+    try:
+        # Convert to lowercase for comparison
+        user_lower = user_input.lower()
+        bot_lower = bot_response.lower()
+        
+        # Extract features for comparison
+        user_words = set(user_lower.split())
+        bot_words = set(bot_lower.split())
+        
+        # 1. Calculate word overlap
+        shared_words = user_words.intersection(bot_words)
+        word_overlap = len(shared_words) / (len(user_words) + 0.1)  # Add 0.1 to avoid division by zero
+        
+        # 2. Function word matching (style accommodation)
+        function_words = ["the", "and", "to", "of", "a", "in", "that", "is", "was", "it", 
+                         "for", "with", "as", "be", "this", "have", "from", "on", "not", "by"]
+        
+        user_func_count = sum(1 for word in function_words if word in user_words)
+        bot_func_count = sum(1 for word in function_words if word in bot_words)
+        
+        func_word_match = 1.0 - (abs(user_func_count - bot_func_count) / (max(user_func_count, bot_func_count) + 0.1))
+        
+        # Combine scores (higher weight to content overlap)
+        return (word_overlap * 0.7) + (func_word_match * 0.3)
     
-    # 1. Calculate word overlap
-    shared_words = user_words.intersection(bot_words)
-    word_overlap = len(shared_words) / (len(user_words) + 0.1)  # Add 0.1 to avoid division by zero
-    
-    # 2. Function word matching (style accommodation)
-    function_words = ["the", "and", "to", "of", "a", "in", "that", "is", "was", "it", 
-                     "for", "with", "as", "be", "this", "have", "from", "on", "not", "by"]
-    
-    user_func_count = sum(1 for word in function_words if word in user_words)
-    bot_func_count = sum(1 for word in function_words if word in bot_words)
-    
-    func_word_match = 1.0 - (abs(user_func_count - bot_func_count) / (max(user_func_count, bot_func_count) + 0.1))
-    
-    # Combine scores (higher weight to content overlap)
-    return (word_overlap * 0.7) + (func_word_match * 0.3)
+    except Exception as e:
+        print(f"Error in fallback linguistic accommodation calculation: {str(e)}")
+        return 0.5  # Return neutral value on error
 
 def update_conversation_stage(next_stage):
     """Update the conversation stage with robust error handling."""
@@ -3298,4 +3405,4 @@ RETURN ONLY THE WORD "true" OR "false" WITHOUT ANY EXPLANATION OR ADDITIONAL TEX
     
 if __name__ == "__main__":
     print(f"API Key exists: {os.environ.get('NEBIUS_API_KEY') is not None}")
-    demo.launch()
+    demo.launch(share=True)
