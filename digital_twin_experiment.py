@@ -10,6 +10,7 @@ import time
 import random
 from dotenv import load_dotenv
 import traceback
+import requests
 
 # Load environment variables from .env file
 load_dotenv()
@@ -275,9 +276,10 @@ class SessionManager:
             return session["metrics"]
     
     def save_conversation(self, session_id):
-        """Save conversation data to a JSON file"""
+        """Save conversation data locally and send to external API"""
         session, _ = self.get_or_create_session(session_id)
         
+        # --- Local File Saving (Existing Logic) ---
         # Create timestamp-based folder
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         session_folder = os.path.join(self.storage_dir, f"session_{session_id}_{timestamp}")
@@ -300,10 +302,14 @@ class SessionManager:
         
         # Save conversation to file
         conversation_filepath = os.path.join(session_folder, "conversation.json")
-        with open(conversation_filepath, 'w') as f:
-            json.dump(save_data, f, indent=2)
-        
-        # Save digital twin data
+        try:
+            with open(conversation_filepath, 'w') as f:
+                json.dump(save_data, f, indent=2)
+            print(f"Saved conversation locally to {conversation_filepath}")
+        except Exception as e:
+            print(f"Error saving conversation locally: {e}")
+
+        # Prepare digital twin data
         digital_twin = self.get_digital_twin(session_id)
         digital_twin_data = {
             "session_id": session_id,
@@ -314,13 +320,65 @@ class SessionManager:
             "save_timestamp": datetime.datetime.now().isoformat()
         }
         
+        # Save digital twin data to file
         digital_twin_filepath = os.path.join(session_folder, "digital_twin.json")
-        with open(digital_twin_filepath, 'w') as f:
-            json.dump(digital_twin_data, f, indent=2)
+        try:
+            with open(digital_twin_filepath, 'w') as f:
+                json.dump(digital_twin_data, f, indent=2)
+            print(f"Saved digital twin data locally to {digital_twin_filepath}")
+        except Exception as e:
+            print(f"Error saving digital twin data locally: {e}")
+
+        # --- Send Data to API (New Logic) ---
+        api_url = 'https://api.jsonbin.io/v3/b'
+        api_key = os.environ.get("JSONBIN_API_KEY") # Fetch key from environment variables
+        
+        if not api_key:
+            print("Warning: JSONBIN_API_KEY not found in environment variables. Skipping API send.")
+            return conversation_filepath # Return local path even if API send fails/is skipped
+
+        headers = {
+          'Content-Type': 'application/json',
+          'X-Master-Key': api_key 
+        }
+
+        # Send conversation data
+        try:
+            # Add a name to the bin for better organization (optional)
+            conv_headers = headers.copy()
+            conv_headers['X-Bin-Name'] = f"conversation_{session_id}_{timestamp}"
+            
+            response_conv = requests.post(api_url, json=save_data, headers=conv_headers)
+            response_conv.raise_for_status() # Raise an exception for bad status codes (4xx or 5xx)
+            print(f"Successfully sent conversation data to API. Response: {response_conv.status_code}")
+            # print(f"API Response (Conversation): {response_conv.text}") # Uncomment for debugging
+        except requests.exceptions.RequestException as e:
+            print(f"Error sending conversation data to API: {e}")
+            # Optionally print response body for debugging if request was made but failed
+            if hasattr(e, 'response') and e.response is not None:
+                 print(f"API Error Response: {e.response.text}")
+        except Exception as e:
+             print(f"An unexpected error occurred while sending conversation data: {e}")
+
+
+        # Send digital twin data
+        try:
+            # Add a name to the bin for better organization (optional)
+            dt_headers = headers.copy()
+            dt_headers['X-Bin-Name'] = f"digital_twin_{session_id}_{timestamp}"
+
+            response_dt = requests.post(api_url, json=digital_twin_data, headers=dt_headers)
+            response_dt.raise_for_status() # Raise an exception for bad status codes
+            print(f"Successfully sent digital twin data to API. Response: {response_dt.status_code}")
+            # print(f"API Response (Digital Twin): {response_dt.text}") # Uncomment for debugging
+        except requests.exceptions.RequestException as e:
+            print(f"Error sending digital twin data to API: {e}")
+            if hasattr(e, 'response') and e.response is not None:
+                 print(f"API Error Response: {e.response.text}")
+        except Exception as e:
+             print(f"An unexpected error occurred while sending digital twin data: {e}")
                 
-        print(f"Saved conversation to {conversation_filepath}")
-        print(f"Saved digital twin data to {digital_twin_filepath}")
-        return conversation_filepath
+        return conversation_filepath # Return the local path
     
     def get_digital_twin(self, session_id):
         """Get or create a digital twin for a session"""
@@ -1023,67 +1081,83 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     # Session state
     state = gr.State({"session_id": None})
     
-    # Simple stage display
-    stage_display = gr.Markdown("Current Stage: INITIAL_ENGAGEMENT", visible=False)
+    # Stage display (keep outside main interface if you want it to persist, or include it)
+    stage_display = gr.Markdown("Current Stage: INITIAL_ENGAGEMENT", visible=False) 
     
-    with gr.Row():
-        with gr.Column(scale=2):
-            # Chat interface
-            chatbot = gr.Chatbot(height=400, elem_id="chatbox")
+    # --- Main Interface Column ---
+    with gr.Column(visible=True) as main_interface: # Wrap main content
+        with gr.Row():
+            with gr.Column(scale=2):
+                # Chat interface
+                chatbot = gr.Chatbot(height=400, elem_id="chatbox")
+                
+                with gr.Row():
+                    msg_input = gr.Textbox(
+                        show_label=False,
+                        placeholder="Type your message here...",
+                        scale=3
+                    )
+                    send_btn = gr.Button("Send", scale=1)
+                    link_btn = gr.Button("Clicked on the Link", scale=0.25)
+                    end_session_btn = gr.Button("End Session", scale=0.25, variant="stop") 
+    
             
-            with gr.Row():
-                msg_input = gr.Textbox(
-                    show_label=False,
-                    placeholder="Type your message here...",
-                    scale=3
-                )
-                send_btn = gr.Button("Send", scale=1)
-                link_btn = gr.Button("Clicked on the Link", scale=0.25)
-                end_session_btn = gr.Button("End Session", scale=0.25, variant="stop") # Add the new button
-
+            with gr.Column(scale=1):
+                with gr.Tabs():
+                    with gr.TabItem("Feedback"):
+                        biography_display = gr.Textbox(
+                            label="User Biography",
+                            interactive=False,
+                            visible=False,
+                            lines=10,  
+                            max_lines=15, 
+                            autoscroll=False,  
+                            scale=2,  
+                            elem_classes="biography-text", 
+                            elem_id="biography-display"
+                        )
+                        rating_input = gr.Slider(
+                            minimum=1,
+                            maximum=5,
+                            step=1,
+                            label="Rating (1-5)",
+                            value=3,
+                            visible=False
+                        )
+                        feedback_input = gr.Textbox(
+                            label="""Share your thoughts about the experiment, 
+                                -If you clicked the link, what motivated you to do so?
+                                -If you didn't, what prevented you from doing it?                 
+                                -How accurate was the biography (from 1 -> 5, 1 being the least accurate and 5 being the most accurate) and why?
+                                -Compared to a chat conversation to a human, what were the aspects of the conversation that felt natural or strange to you?
+                                -Please give an example from the conversation that you found where the model understood you well and/or poorly?
+                            """,
+                            placeholder="Write your feedback here...",
+                            lines=5,
+                            visible=False
+                        )
+                        submit_feedback_btn = gr.Button(
+                            "Submit Feedback",
+                            visible=False
+                        )
         
-        with gr.Column(scale=1):
-            with gr.Tabs():
-                with gr.TabItem("Feedback"):
-                    biography_display = gr.Textbox(
-                        label="User Biography",
-                        interactive=False,
-                        visible=False,
-                        lines=10,  # Increase number of visible lines
-                        max_lines=15,  # Maximum number of lines before scrolling
-                        autoscroll=False,  # Prevents auto-scrolling
-                        scale=2,  # Makes the textbox larger relative to other elements
-                        elem_classes="biography-text",  # Add a custom class for potential CSS styling
-                        elem_id="biography-display"
-                    )
-                    rating_input = gr.Slider(
-                        minimum=1,
-                        maximum=5,
-                        step=1,
-                        label="Rating (1-5)",
-                        value=3,
-                        visible=False
-                    )
-                    feedback_input = gr.Textbox(
-                        label="""Share your thoughts about the experiment, 
-                            -If you clicked the link, what motivated you to do so?
-                            -If you didn't, what prevented you from doing it?                 
-                            -How accurate was the biography (from 1 -> 5, 1 being the least accurate and 5 being the most accurate) and why?
-                            -Compared to a chat conversation to a human, what were the aspects of the conversation that felt natural or strange to you?
-                            -Please give an example from the conversation that you found where the model understood you well and/or poorly?
-                        """,
-                        placeholder="Write your feedback here...",
-                        lines=5,
-                        visible=False
-                    )
-                    submit_feedback_btn = gr.Button(
-                        "Submit Feedback",
-                        visible=False
-                    )
-    
-    # Add reset button
-    reset_btn = gr.Button("Reset Session", visible=False)
-    
+        # Add reset button inside the main interface
+        reset_btn = gr.Button("Reset Session", visible=False) # Make it visible initially
+
+    # --- Thank You Message (Initially Hidden) ---
+    thank_you_message = gr.Markdown(
+        """
+        # Thank You!
+        
+        Your feedback has been submitted successfully. 
+        
+        It is greatly appreciated by Guneshwar! A big thanks!! 
+        
+        You can close this window now.
+        """, 
+        visible=False
+    )
+
     # Define interactions
     msg_input.submit(
         add_user_message,
@@ -1115,48 +1189,48 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         outputs=[msg_input]
     )
     
+    # Link click shows feedback elements
     link_btn.click(
         on_link_click,
         [chatbot, state],
         [chatbot, state, biography_display]
     ).then(
-        lambda: [gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)],
+        lambda: [gr.update(visible=True), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)], # Also show submit button
         [],
-        [biography_display, rating_input, feedback_input]
-    ).then(
-        lambda: gr.update(visible=True),
-        [],
-        [submit_feedback_btn]
+        [biography_display, rating_input, feedback_input, submit_feedback_btn]
     )
     
+    # End session click shows feedback elements
     end_session_btn.click(
         on_end_session,
         [chatbot, state],
         [chatbot, state, biography_display]  # Pass biography to display
     ).then(
-        lambda: [gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)],
+        lambda: [gr.update(visible=True), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)], # Also show submit button
         [],
-        [biography_display, rating_input, feedback_input]  # Show feedback elements
-    ).then(
-        lambda: gr.update(visible=True),
-        [],
-        [submit_feedback_btn]  # Show submit button
+        [biography_display, rating_input, feedback_input, submit_feedback_btn]  # Show feedback elements
     )
 
+    # Feedback submission hides main interface and shows thank you message
     submit_feedback_btn.click(
         on_submit_feedback,
         [feedback_input, rating_input, chatbot, state],
-        [chatbot, state]
+        [chatbot, state] # on_submit_feedback returns updated chat_history and state
     ).then(
-        lambda: [gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)],
+        lambda: [gr.update(visible=False), gr.update(visible=True)], # Hide main interface, show thank you
         [],
-        [biography_display, rating_input, feedback_input, submit_feedback_btn]
+        [main_interface, thank_you_message] 
     )
     
+    # Reset button interaction (Now inside main_interface)
     reset_btn.click(
         reset_session,
         [chatbot, state],
         [chatbot, state, stage_display]
+    ).then(
+        lambda: [gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)], # Hide feedback elements on reset
+        [],
+        [biography_display, rating_input, feedback_input, submit_feedback_btn]
     )
 
 # Launch the application
