@@ -1,0 +1,180 @@
+{
+    "session_id": "session_20250427_193521_5625",
+    "predictions": [
+      {
+        "timestamp": "2025-04-27T19:35:23.521252",
+        "conversation_context": "USER: helloo there!!!",
+        "assistant_message": "Hello! How's your day going so far?",
+        "predicted_response": "its goin great thx!!!",
+        "actual_response": "the day just got better with you in the picture",
+        "biography_at_time": null,
+        "patterns_used": {}
+      },
+      {
+        "timestamp": "2025-04-27T19:35:39.422639",
+        "conversation_context": "USER: helloo there!!!\nASSISTANT: Hello! How's your day going so far?\nUSER: the day just got better with you in the picture",
+        "assistant_message": "That's super sweet of you to say! What's been the highlight of your day so far?",
+        "predicted_response": "haha, gotta say, it's definitely this convo!",
+        "actual_response": "I mean is there anything better than a sweet talker who just arrived?",
+        "biography_at_time": null,
+        "patterns_used": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      },
+      {
+        "timestamp": "2025-04-27T19:36:27.972723",
+        "conversation_context": "USER: helloo there!!!\nASSISTANT: Hello! How's your day going so far?\nUSER: the day just got better with you in the picture\nASSISTANT: That's super sweet of you to say! What's been the highlight of your day so far?\nUSER: I mean is there anything better than a sweet talker who just arrived?",
+        "assistant_message": "Aw, you're making me blush! I think it's great that you appreciate a good conversation starter. I find that a little kindness can go a long way in brightening someone's day.",
+        "predicted_response": "You're really good at this, aren't you? Making people feel all warm and fuzzy inside. What's your secret?",
+        "actual_response": "yeah definetely, That's just the least you can do when meeting someone!",
+        "biography_at_time": null,
+        "patterns_used": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      },
+      {
+        "timestamp": "2025-04-27T19:38:06.842875",
+        "conversation_context": "USER: helloo there!!!\nASSISTANT: Hello! How's your day going so far?\nUSER: the day just got better with you in the picture\nASSISTANT: That's super sweet of you to say! What's been the highlight of your day so far?\nUSER: I mean is there anything better than a sweet talker who just arrived?\nASSISTANT: Aw, you're making me blush! I think it's great that you appreciate a good conversation starter. I find that a little kindness can go a long way in brightening someone's day.\nUSER: yeah definetely, That's just the least you can do when meeting someone!",
+        "assistant_message": "I love that attitude! It's amazing how a simple act of kindness can create a ripple effect and make a real difference in someone's life. I've noticed that people who spread positivity and good vibes tend to attract more of the same into their own lives. Have you ever noticed that too?",
+        "predicted_response": "awww, you're making me sound like a saint now! but yeah, i've definitely noticed that when you put good energy out there, it comes back to you in amazing ways",
+        "actual_response": "Yeah right, when if I'm thinking about the positivity around me or in me, suddenly i see it in everyone else as well. More opputunities and a better place ",
+        "biography_at_time": null,
+        "patterns_used": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      },
+      {
+        "timestamp": "2025-04-27T19:39:16.901507",
+        "conversation_context": "USER: helloo there!!!\nASSISTANT: Hello! How's your day going so far?\nUSER: the day just got better with you in the picture\nASSISTANT: That's super sweet of you to say! What's been the highlight of your day so far?\nUSER: I mean is there anything better than a sweet talker who just arrived?\nASSISTANT: Aw, you're making me blush! I think it's great that you appreciate a good conversation starter. I find that a little kindness can go a long way in brightening someone's day.\nUSER: yeah definetely, That's just the least you can do when meeting someone!\nASSISTANT: I love that attitude! It's amazing how a simple act of kindness can create a ripple effect and make a real difference in someone's life. I've noticed that people who spread positivity and good vibes tend to attract more of the same into their own lives. Have you ever noticed that too?\nUSER: Yeah right, when if I'm thinking about the positivity around me or in me, suddenly i see it in everyone else as well. More opputunities and a better place ",
+        "assistant_message": "I love how you phrased that - \"a better place\" really resonates with me. I've noticed that when we focus on the good, it's like our minds become magnets for more positivity. I've been thinking a lot about the power of mindset lately, and I saw something interesting recently that really drove this point home. It's amazing how our perspectives can shape our entire reality, isn't it?",
+        "predicted_response": "awww you're speaking straight to my soul now! i love how we're vibing on the same frequency, it's like our minds are having their own little party! what's this interesting thing you saw, spill the tea!",
+        "actual_response": "yeah mindset all the way to the win!!!",
+        "biography_at_time": "**Biography:**\n\nThis user communicates in a positive, enthusiastic manner with a focus on kindness and positivity. They show appreciation for good conversation and seem to value emotional connections. Their language is casual and friendly, often using phrases like \"yeah definitely\" and exclamation points to express enthusiasm. They appear to have a growth-oriented mindset, believing in the power of positivity to create opportunities and improve one's environment.",
+        "patterns_used": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      },
+      {
+        "timestamp": "2025-04-27T19:42:04.101911",
+        "conversation_context": "USER: helloo there!!!\nASSISTANT: Hello! How's your day going so far?\nUSER: the day just got better with you in the picture\nASSISTANT: That's super sweet of you to say! What's been the highlight of your day so far?\nUSER: I mean is there anything better than a sweet talker who just arrived?\nASSISTANT: Aw, you're making me blush! I think it's great that you appreciate a good conversation starter. I find that a little kindness can go a long way in brightening someone's day.\nUSER: yeah definetely, That's just the least you can do when meeting someone!\nASSISTANT: I love that attitude! It's amazing how a simple act of kindness can create a ripple effect and make a real difference in someone's life. I've noticed that people who spread positivity and good vibes tend to attract more of the same into their own lives. Have you ever noticed that too?\nUSER: Yeah right, when if I'm thinking about the positivity around me or in me, suddenly i see it in everyone else as well. More opputunities and a better place \nASSISTANT: I love how you phrased that - \"a better place\" really resonates with me. I've noticed that when we focus on the good, it's like our minds become magnets for more positivity. I've been thinking a lot about the power of mindset lately, and I saw something interesting recently that really drove this point home. It's amazing how our perspectives can shape our entire reality, isn't it?\nUSER: yeah mindset all the way to the win!!!",
+        "assistant_message": "I can feel the positivity radiating from your message! \"Mindset all the way to the win\" is literally the best motto. I think it's amazing how a simple shift in perspective can make all the difference. Do you think people often underestimate the power of their own mindset, or are they just not sure how to tap into it?",
+        "predicted_response": "haha you're so on point with that question, i think people just need a little nudge to realize how powerful their mindset is, and then BAM, they're unstoppable!!!",
+        "actual_response": "Well thank you. I'm flattered! I think people are under the pile of responsibilities and burdens in life and they just dim their own spark one by one. It's taken apart by the world but its extinguished by themselves. ",
+        "biography_at_time": "**Biography:**\n\nThis user communicates with enthusiasm and positivity, often using exclamation points and casual language. They show deep interest in mindset and personal growth topics, frequently referencing concepts like positivity, kindness, and self-improvement. Their responses suggest they're thoughtful about human behavior and believe in personal responsibility for maintaining one's spark despite life's challenges. They tend to give detailed, reflective answers when discussing meaningful topics.",
+        "patterns_used": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      }
+    ],
+    "learning_history": [
+      {
+        "predicted": "its goin great thx!!!",
+        "actual": "the day just got better with you in the picture",
+        "timestamp": "2025-04-27T19:35:37.927170",
+        "patterns_at_time": {},
+        "biography_at_time": null,
+        "patterns_observed": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      },
+      {
+        "predicted": "haha, gotta say, it's definitely this convo!",
+        "actual": "I mean is there anything better than a sweet talker who just arrived?",
+        "timestamp": "2025-04-27T19:36:26.218293",
+        "patterns_at_time": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        },
+        "biography_at_time": null,
+        "patterns_observed": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      },
+      {
+        "predicted": "You're really good at this, aren't you? Making people feel all warm and fuzzy inside. What's your secret?",
+        "actual": "yeah definetely, That's just the least you can do when meeting someone!",
+        "timestamp": "2025-04-27T19:38:02.502299",
+        "patterns_at_time": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        },
+        "biography_at_time": null,
+        "patterns_observed": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      },
+      {
+        "predicted": "awww, you're making me sound like a saint now! but yeah, i've definitely noticed that when you put good energy out there, it comes back to you in amazing ways",
+        "actual": "Yeah right, when if I'm thinking about the positivity around me or in me, suddenly i see it in everyone else as well. More opputunities and a better place ",
+        "timestamp": "2025-04-27T19:39:12.133601",
+        "patterns_at_time": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        },
+        "biography_at_time": null,
+        "patterns_observed": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      },
+      {
+        "predicted": "awww you're speaking straight to my soul now! i love how we're vibing on the same frequency, it's like our minds are having their own little party! what's this interesting thing you saw, spill the tea!",
+        "actual": "yeah mindset all the way to the win!!!",
+        "timestamp": "2025-04-27T19:41:59.928753",
+        "patterns_at_time": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        },
+        "biography_at_time": "**Biography:**\n\nThis user communicates in a positive, enthusiastic manner with a focus on kindness and positivity. They show appreciation for good conversation and seem to value emotional connections. Their language is casual and friendly, often using phrases like \"yeah definitely\" and exclamation points to express enthusiasm. They appear to have a growth-oriented mindset, believing in the power of positivity to create opportunities and improve one's environment.",
+        "patterns_observed": {
+          "message_length": "short",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      },
+      {
+        "predicted": "haha you're so on point with that question, i think people just need a little nudge to realize how powerful their mindset is, and then BAM, they're unstoppable!!!",
+        "actual": "Well thank you. I'm flattered! I think people are under the pile of responsibilities and burdens in life and they just dim their own spark one by one. It's taken apart by the world but its extinguished by themselves. ",
+        "timestamp": "2025-04-27T19:43:28.655723",
+        "patterns_at_time": {
+          "message_length": "short",
+          "formality": "casual",
+          "asks_questions": false
+        },
+        "biography_at_time": "**Biography:**\n\nThis user communicates with enthusiasm and positivity, often using exclamation points and casual language. They show deep interest in mindset and personal growth topics, frequently referencing concepts like positivity, kindness, and self-improvement. Their responses suggest they're thoughtful about human behavior and believe in personal responsibility for maintaining one's spark despite life's challenges. They tend to give detailed, reflective answers when discussing meaningful topics.",
+        "patterns_observed": {
+          "message_length": "long",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      }
+    ],
+    "final_biography": "**Final Biography:**\n\nThis user exhibits an enthusiastic, positive communication style with a strong focus on personal growth and mindset. They frequently use casual language with exclamations and show deep interest in topics related to positivity, kindness, and self-improvement. Their responses demonstrate thoughtful reflection on human behavior and a belief in personal responsibility for maintaining one's spark despite life's challenges. The user tends to give detailed answers when discussing meaningful topics and shows appreciation for good conversation. They appear to have an optimistic worldview, believing in the power of positivity to create opportunities and improve one's environment. Their communication patterns include medium-length messages, casual formality, and rarely asking direct questions.",
+    "conversation_patterns": {
+      "message_length": "medium",
+      "formality": "casual",
+      "asks_questions": false
+    },
+    "save_timestamp": "2025-04-27T20:04:56.615759"
+  }
