@@ -1,0 +1,140 @@
+{
+    "session_id": "session_20250429_140627_5708",
+    "has_digital_twin": false,
+    "experiment_version": "no_digital_twin",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Helloo",
+        "timestamp": "2025-04-29T14:06:31.504384",
+        "session_id": "session_20250429_140627_5708",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Hi! How's it going?",
+        "timestamp": "2025-04-29T14:06:31.824130",
+        "session_id": "session_20250429_140627_5708",
+        "metrics": {},
+        "initial_response": "Hi! How's it going?"
+      },
+      {
+        "role": "user",
+        "content": "What is your name",
+        "timestamp": "2025-04-29T14:06:56.799083",
+        "session_id": "session_20250429_140627_5708",
+        "metrics": {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "I'm Alex, nice to meet you! What brings you here today?",
+        "timestamp": "2025-04-29T14:06:57.342905",
+        "session_id": "session_20250429_140627_5708",
+        "metrics": {},
+        "initial_response": "I'm Alex, nice to meet you! What brings you here today?"
+      },
+      {
+        "role": "system",
+        "content": "Session ended manually. Please provide your feedback.",
+        "timestamp": "2025-04-29T14:07:02.495288",
+        "session_id": "session_20250429_140627_5708",
+        "metrics": {}
+      },
+      {
+        "role": "system",
+        "content": "Link click recorded! Please rate your experience and provide feedback.",
+        "timestamp": "2025-04-29T14:07:03.260451",
+        "session_id": "session_20250429_140627_5708",
+        "metrics": {}
+      },
+      {
+        "role": "system",
+        "content": "Session ended manually. Please provide your feedback.",
+        "timestamp": "2025-04-29T14:07:05.520763",
+        "session_id": "session_20250429_140627_5708",
+        "metrics": {}
+      },
+      {
+        "role": "system",
+        "content": "Thank you for your feedback!",
+        "timestamp": "2025-04-29T14:07:11.160264",
+        "session_id": "session_20250429_140627_5708",
+        "metrics": {}
+      }
+    ],
+    "stage_history": [
+      {
+        "stage": "RAPPORT_BUILDING",
+        "timestamp": "2025-04-29T14:06:57.994554",
+        "message_count": 4
+      },
+      {
+        "stage": "SESSION_COMPLETION",
+        "timestamp": "2025-04-29T14:07:02.495307",
+        "message_count": 5
+      },
+      {
+        "stage": "SESSION_COMPLETION",
+        "timestamp": "2025-04-29T14:07:03.260463",
+        "message_count": 6
+      },
+      {
+        "stage": "SESSION_COMPLETION",
+        "timestamp": "2025-04-29T14:07:05.520780",
+        "message_count": 7
+      }
+    ],
+    "final_metrics": {
+      "engagement_depth": 0.6,
+      "topic_continuity": 0.8,
+      "personal_disclosure": 0,
+      "resource_interest": 0,
+      "trust_score": 0.5
+    },
+    "metrics_history": {
+      "trust_scores": [
+        {
+          "score": 0,
+          "message_count": 2,
+          "timestamp": "2025-04-29T14:06:32.251864"
+        },
+        {
+          "score": 0.5,
+          "message_count": 4,
+          "timestamp": "2025-04-29T14:06:57.994497"
+        }
+      ],
+      "engagement_metrics": [
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        },
+        {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        }
+      ]
+    },
+    "link_clicks": 1,
+    "feedback": {
+      "text": "Good",
+      "timestamp": "2025-04-29T14:07:11.160251"
+    },
+    "save_timestamp": "2025-04-29T14:07:11.160405"
+  }

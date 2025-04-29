@@ -1,0 +1,111 @@
+{
+    "session_id": "session_20250429_135825_5777",
+    "has_digital_twin": false,
+    "experiment_version": "no_digital_twin",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Yo",
+        "timestamp": "2025-04-29T13:58:25.906985",
+        "session_id": "session_20250429_135825_5777",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Hey, how's it going? Been up to anything exciting lately?",
+        "timestamp": "2025-04-29T13:58:26.492730",
+        "session_id": "session_20250429_135825_5777",
+        "metrics": {},
+        "initial_response": "Hey, how's it going? Been up to anything exciting lately?"
+      },
+      {
+        "role": "system",
+        "content": "Session ended manually. Please provide your feedback.",
+        "timestamp": "2025-04-29T13:58:30.943607",
+        "session_id": "session_20250429_135825_5777",
+        "metrics": {}
+      },
+      {
+        "role": "user",
+        "content": "Great",
+        "timestamp": "2025-04-29T13:58:36.187797",
+        "session_id": "session_20250429_135825_5777",
+        "metrics": {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Aw, glad to hear that! It was great chatting with you, even if it was just a quick hello. If you're ever up for a conversation, I'm here. Take care!",
+        "timestamp": "2025-04-29T13:58:36.844049",
+        "session_id": "session_20250429_135825_5777",
+        "metrics": {},
+        "initial_response": "Aw, glad to hear that! It was great chatting with you, even if it was just a quick hello. If you're ever up for a conversation, I'm here. Take care!"
+      },
+      {
+        "role": "system",
+        "content": "Thank you for your feedback!",
+        "timestamp": "2025-04-29T13:58:44.378385",
+        "session_id": "session_20250429_135825_5777",
+        "metrics": {}
+      }
+    ],
+    "stage_history": [
+      {
+        "stage": "SESSION_COMPLETION",
+        "timestamp": "2025-04-29T13:58:30.943625",
+        "message_count": 3
+      }
+    ],
+    "final_metrics": {
+      "engagement_depth": 0.2,
+      "topic_continuity": 0.6,
+      "personal_disclosure": 0,
+      "resource_interest": 0,
+      "trust_score": 0.8
+    },
+    "metrics_history": {
+      "trust_scores": [
+        {
+          "score": 0,
+          "message_count": 2,
+          "timestamp": "2025-04-29T13:58:27.157661"
+        },
+        {
+          "score": 0.8,
+          "message_count": 5,
+          "timestamp": "2025-04-29T13:58:37.292309"
+        }
+      ],
+      "engagement_metrics": [
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        },
+        {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        }
+      ]
+    },
+    "link_clicks": 0,
+    "feedback": {
+      "text": "",
+      "timestamp": "2025-04-29T13:58:44.378365"
+    },
+    "save_timestamp": "2025-04-29T13:58:44.378530"
+  }

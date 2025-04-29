@@ -1,0 +1,149 @@
+{
+    "session_id": "session_20250429_152143_9081",
+    "has_digital_twin": false,
+    "experiment_version": "no_digital_twin",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Hi",
+        "timestamp": "2025-04-29T15:21:43.595673",
+        "session_id": "session_20250429_152143_9081",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Hey, how's your day going so far?",
+        "timestamp": "2025-04-29T15:21:44.256433",
+        "session_id": "session_20250429_152143_9081",
+        "metrics": {},
+        "initial_response": "Hey, how's your day going so far?"
+      },
+      {
+        "role": "user",
+        "content": "Fine",
+        "timestamp": "2025-04-29T15:21:50.040299",
+        "session_id": "session_20250429_152143_9081",
+        "metrics": {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "That's good to hear. What's been the highlight of your day so far?",
+        "timestamp": "2025-04-29T15:21:50.667763",
+        "session_id": "session_20250429_152143_9081",
+        "metrics": {},
+        "initial_response": "That's good to hear. What's been the highlight of your day so far?"
+      },
+      {
+        "role": "user",
+        "content": "Nothing much",
+        "timestamp": "2025-04-29T15:21:59.072219",
+        "session_id": "session_20250429_152143_9081",
+        "metrics": {
+          "engagement_depth": 0.2,
+          "topic_continuity": 0.8,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Sometimes days can be pretty low-key, and that's totally okay. I've had days where nothing out of the ordinary happens, but I still find ways to make the most of my downtime. What do you usually do to unwind when you're not doing much?",
+        "timestamp": "2025-04-29T15:22:00.028579",
+        "session_id": "session_20250429_152143_9081",
+        "metrics": {},
+        "initial_response": "Sometimes days can be pretty low-key, and that's totally okay. I've had days where nothing out of the ordinary happens, but I still find ways to make the most of my downtime. What do you usually do to unwind when you're not doing much?"
+      },
+      {
+        "role": "system",
+        "content": "Session ended manually. Please provide your feedback.",
+        "timestamp": "2025-04-29T15:22:07.613957",
+        "session_id": "session_20250429_152143_9081",
+        "metrics": {}
+      },
+      {
+        "role": "system",
+        "content": "Thank you for your feedback!",
+        "timestamp": "2025-04-29T15:22:13.341427",
+        "session_id": "session_20250429_152143_9081",
+        "metrics": {}
+      }
+    ],
+    "stage_history": [
+      {
+        "stage": "RAPPORT_BUILDING",
+        "timestamp": "2025-04-29T15:21:51.335653",
+        "message_count": 4
+      },
+      {
+        "stage": "SESSION_COMPLETION",
+        "timestamp": "2025-04-29T15:22:07.613976",
+        "message_count": 7
+      }
+    ],
+    "final_metrics": {
+      "engagement_depth": 0.2,
+      "topic_continuity": 0.8,
+      "personal_disclosure": 0,
+      "resource_interest": 0,
+      "trust_score": 0.4
+    },
+    "metrics_history": {
+      "trust_scores": [
+        {
+          "score": 0,
+          "message_count": 2,
+          "timestamp": "2025-04-29T15:21:44.919828"
+        },
+        {
+          "score": 0.5,
+          "message_count": 4,
+          "timestamp": "2025-04-29T15:21:51.335593"
+        },
+        {
+          "score": 0.4,
+          "message_count": 6,
+          "timestamp": "2025-04-29T15:22:00.684154"
+        }
+      ],
+      "engagement_metrics": [
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        },
+        {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        },
+        {
+          "engagement_depth": 0.2,
+          "topic_continuity": 0.8,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0.5
+        }
+      ]
+    },
+    "link_clicks": 0,
+    "feedback": {
+      "text": "",
+      "timestamp": "2025-04-29T15:22:13.341416"
+    },
+    "save_timestamp": "2025-04-29T15:22:13.341570"
+  }

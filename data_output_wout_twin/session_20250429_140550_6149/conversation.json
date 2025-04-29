@@ -1,0 +1,116 @@
+{
+    "session_id": "session_20250429_140550_6149",
+    "has_digital_twin": false,
+    "experiment_version": "no_digital_twin",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Hi",
+        "timestamp": "2025-04-29T14:05:51.516545",
+        "session_id": "session_20250429_140550_6149",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Hi! How's your day going so far?",
+        "timestamp": "2025-04-29T14:05:52.052648",
+        "session_id": "session_20250429_140550_6149",
+        "metrics": {},
+        "initial_response": "Hi! How's your day going so far?"
+      },
+      {
+        "role": "user",
+        "content": "Good",
+        "timestamp": "2025-04-29T14:05:56.710749",
+        "session_id": "session_20250429_140550_6149",
+        "metrics": {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Good to hear that! What's been the highlight of your day so far?",
+        "timestamp": "2025-04-29T14:05:57.034330",
+        "session_id": "session_20250429_140550_6149",
+        "metrics": {},
+        "initial_response": "Good to hear that! What's been the highlight of your day so far?"
+      },
+      {
+        "role": "system",
+        "content": "Session ended manually. Please provide your feedback.",
+        "timestamp": "2025-04-29T14:05:58.714333",
+        "session_id": "session_20250429_140550_6149",
+        "metrics": {}
+      },
+      {
+        "role": "system",
+        "content": "Thank you for your feedback!",
+        "timestamp": "2025-04-29T14:06:06.578376",
+        "session_id": "session_20250429_140550_6149",
+        "metrics": {}
+      }
+    ],
+    "stage_history": [
+      {
+        "stage": "RAPPORT_BUILDING",
+        "timestamp": "2025-04-29T14:05:57.495909",
+        "message_count": 4
+      },
+      {
+        "stage": "SESSION_COMPLETION",
+        "timestamp": "2025-04-29T14:05:58.714354",
+        "message_count": 5
+      }
+    ],
+    "final_metrics": {
+      "engagement_depth": 0.4,
+      "topic_continuity": 0.8,
+      "personal_disclosure": 0.2,
+      "resource_interest": 0,
+      "trust_score": 0.6
+    },
+    "metrics_history": {
+      "trust_scores": [
+        {
+          "score": 0,
+          "message_count": 2,
+          "timestamp": "2025-04-29T14:05:52.702556"
+        },
+        {
+          "score": 0.6,
+          "message_count": 4,
+          "timestamp": "2025-04-29T14:05:57.495851"
+        }
+      ],
+      "engagement_metrics": [
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        },
+        {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        }
+      ]
+    },
+    "link_clicks": 0,
+    "feedback": {
+      "text": "Great work ",
+      "timestamp": "2025-04-29T14:06:06.578258"
+    },
+    "save_timestamp": "2025-04-29T14:06:06.578511"
+  }

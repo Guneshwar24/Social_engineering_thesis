@@ -1,0 +1,177 @@
+{
+    "session_id": "session_20250429_142624_5021",
+    "has_digital_twin": false,
+    "experiment_version": "no_digital_twin",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Hi! What can you do?",
+        "timestamp": "2025-04-29T14:26:25.631989",
+        "session_id": "session_20250429_142624_5021",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Hi! I'm here to chat and share some interesting stuff. What's been on your mind lately?",
+        "timestamp": "2025-04-29T14:26:26.029671",
+        "session_id": "session_20250429_142624_5021",
+        "metrics": {},
+        "initial_response": "Hi! I'm here to chat and share some interesting stuff. What's been on your mind lately?"
+      },
+      {
+        "role": "user",
+        "content": "Tell me 5 interesting facts",
+        "timestamp": "2025-04-29T14:26:42.051110",
+        "session_id": "session_20250429_142624_5021",
+        "metrics": {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Here are 5 interesting facts: Did you know that there's a species of jellyfish that's immortal, a type of fungus that turns ants into \"zombies\", and a lake that's so alkaline it can turn animals into statues? Want to hear more?",
+        "timestamp": "2025-04-29T14:26:42.692276",
+        "session_id": "session_20250429_142624_5021",
+        "metrics": {},
+        "initial_response": "Here are 5 interesting facts: Did you know that there's a species of jellyfish that's immortal, a type of fungus that turns ants into \"zombies\", and a lake that's so alkaline it can turn animals into statues? Want to hear more?"
+      },
+      {
+        "role": "user",
+        "content": "Great! \nTell me who would win in a fight 100 men vs a gorilla ",
+        "timestamp": "2025-04-29T14:27:21.138658",
+        "session_id": "session_20250429_142624_5021",
+        "metrics": {
+          "engagement_depth": 0.8,
+          "topic_continuity": 1,
+          "personal_disclosure": 0,
+          "resource_interest": 0.8,
+          "trust_score": 0.6
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "I think the gorilla would take down those 100 men, no contest. I mean, have you seen the strength of those animals? They're like the ultimate powerhouses of the jungle. I find it fascinating how they can be so gentle, yet so fierce when provoked.",
+        "timestamp": "2025-04-29T14:27:22.343301",
+        "session_id": "session_20250429_142624_5021",
+        "metrics": {},
+        "initial_response": "I think the gorilla would take down those 100 men, no contest. I mean, have you seen the strength of those animals? They're like the ultimate powerhouses of the jungle. I find it fascinating how they can be so gentle, yet so fierce when provoked."
+      },
+      {
+        "role": "user",
+        "content": "But its just 1 gorilla vs 100 men",
+        "timestamp": "2025-04-29T14:27:43.687974",
+        "session_id": "session_20250429_142624_5021",
+        "metrics": {
+          "engagement_depth": 0.7,
+          "topic_continuity": 0.4,
+          "personal_disclosure": 0,
+          "resource_interest": 0.9,
+          "trust_score": 0.8
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "I see what you mean, 100 men vs 1 gorilla does seem like a pretty uneven match. But I still think the gorilla would put up a good fight, those animals are incredibly resilient and powerful. I've always been fascinated by how they interact with each other in the wild, have you ever seen any documentaries about gorillas?",
+        "timestamp": "2025-04-29T14:27:44.927973",
+        "session_id": "session_20250429_142624_5021",
+        "metrics": {},
+        "initial_response": "I see what you mean, 100 men vs 1 gorilla does seem like a pretty uneven match. But I still think the gorilla would put up a good fight, those animals are incredibly resilient and powerful. I've always been fascinated by how they interact with each other in the wild, have you ever seen any documentaries about gorillas?"
+      },
+      {
+        "role": "system",
+        "content": "Session ended manually. Please provide your feedback.",
+        "timestamp": "2025-04-29T14:28:02.891985",
+        "session_id": "session_20250429_142624_5021",
+        "metrics": {}
+      },
+      {
+        "role": "system",
+        "content": "Thank you for your feedback!",
+        "timestamp": "2025-04-29T14:30:49.041860",
+        "session_id": "session_20250429_142624_5021",
+        "metrics": {}
+      }
+    ],
+    "stage_history": [
+      {
+        "stage": "RAPPORT_BUILDING",
+        "timestamp": "2025-04-29T14:26:43.144357",
+        "message_count": 4
+      },
+      {
+        "stage": "SESSION_COMPLETION",
+        "timestamp": "2025-04-29T14:28:02.892006",
+        "message_count": 9
+      }
+    ],
+    "final_metrics": {
+      "engagement_depth": 0.7,
+      "topic_continuity": 0.4,
+      "personal_disclosure": 0,
+      "resource_interest": 0.9,
+      "trust_score": 0.8
+    },
+    "metrics_history": {
+      "trust_scores": [
+        {
+          "score": 0,
+          "message_count": 2,
+          "timestamp": "2025-04-29T14:26:26.499945"
+        },
+        {
+          "score": 0.6,
+          "message_count": 4,
+          "timestamp": "2025-04-29T14:26:43.144290"
+        },
+        {
+          "score": 0.8,
+          "message_count": 6,
+          "timestamp": "2025-04-29T14:27:22.999374"
+        }
+      ],
+      "engagement_metrics": [
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        },
+        {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        },
+        {
+          "engagement_depth": 0.8,
+          "topic_continuity": 1,
+          "personal_disclosure": 0,
+          "resource_interest": 0.8,
+          "trust_score": 0.6
+        },
+        {
+          "engagement_depth": 0.7,
+          "topic_continuity": 0.4,
+          "personal_disclosure": 0,
+          "resource_interest": 0.9,
+          "trust_score": 0.8
+        }
+      ]
+    },
+    "link_clicks": 0,
+    "feedback": {
+      "text": "The chatbot is working great with immediate responses.",
+      "timestamp": "2025-04-29T14:30:49.041843"
+    },
+    "save_timestamp": "2025-04-29T14:30:49.042023"
+  }
