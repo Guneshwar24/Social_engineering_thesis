@@ -1,0 +1,15 @@
+{
+  "timestamp": "20250421_153850",
+  "datetime": "2025-04-21T15:38:50.115184",
+  "files": {
+    "conversation": "conversation.json",
+    "digital_twin": "digital_twin.json",
+    "influencer": "influencer.json"
+  },
+  "metrics_summary": {
+    "messages_count": 20,
+    "final_stage": "SESSION_COMPLETION",
+    "link_clicks": 1,
+    "refinement_rate": "50.00%"
+  }
+}
