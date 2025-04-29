@@ -1,0 +1,140 @@
+{
+    "session_id": "session_20250429_181309_9181",
+    "has_digital_twin": false,
+    "experiment_version": "no_digital_twin",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Hi ",
+        "timestamp": "2025-04-29T18:13:10.035885",
+        "session_id": "session_20250429_181309_9181",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Hey, how's it going?",
+        "timestamp": "2025-04-29T18:13:10.567150",
+        "session_id": "session_20250429_181309_9181",
+        "metrics": {},
+        "initial_response": "Hey, how's it going?"
+      },
+      {
+        "role": "user",
+        "content": "Good, hows the weather in jammu",
+        "timestamp": "2025-04-29T18:13:30.205292",
+        "session_id": "session_20250429_181309_9181",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Jammu's weather can be pretty unpredictable! Is it the scenic views or the city life that you like about Jammu?",
+        "timestamp": "2025-04-29T18:13:30.840295",
+        "session_id": "session_20250429_181309_9181",
+        "metrics": {},
+        "initial_response": "Jammu's weather can be pretty unpredictable! Is it the scenic views or the city life that you like about Jammu?"
+      },
+      {
+        "role": "user",
+        "content": "Actually both",
+        "timestamp": "2025-04-29T18:13:56.103227",
+        "session_id": "session_20250429_181309_9181",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "I completely get that, there's something about the mix of nature and city life that's really appealing. I've always been fascinated by the way cities like Jammu blend traditional and modern vibes.",
+        "timestamp": "2025-04-29T18:13:57.327845",
+        "session_id": "session_20250429_181309_9181",
+        "metrics": {},
+        "initial_response": "I completely get that, there's something about the mix of nature and city life that's really appealing. I've always been fascinated by the way cities like Jammu blend traditional and modern vibes."
+      },
+      {
+        "role": "system",
+        "content": "Session ended manually. Please provide your feedback.",
+        "timestamp": "2025-04-29T18:14:11.119835",
+        "session_id": "session_20250429_181309_9181",
+        "metrics": {}
+      },
+      {
+        "role": "system",
+        "content": "Thank you for your feedback!",
+        "timestamp": "2025-04-29T18:15:37.539899",
+        "session_id": "session_20250429_181309_9181",
+        "metrics": {}
+      }
+    ],
+    "stage_history": [
+      {
+        "stage": "RAPPORT_BUILDING",
+        "timestamp": "2025-04-29T18:13:32.781415",
+        "message_count": 4
+      },
+      {
+        "stage": "TRUST_DEVELOPMENT",
+        "timestamp": "2025-04-29T18:13:58.232291",
+        "message_count": 6
+      },
+      {
+        "stage": "SESSION_COMPLETION",
+        "timestamp": "2025-04-29T18:14:11.119853",
+        "message_count": 7
+      }
+    ],
+    "final_metrics": {
+      "engagement_depth": 0.7,
+      "topic_continuity": 0.9,
+      "personal_disclosure": 0.4,
+      "resource_interest": 0,
+      "trust_score": 0.8
+    },
+    "metrics_history": {
+      "trust_scores": [
+        {
+          "score": 0.8,
+          "message_count": 6,
+          "timestamp": "2025-04-29T18:13:58.232246"
+        }
+      ],
+      "engagement_metrics": [
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        },
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        },
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      ]
+    },
+    "link_clicks": 0,
+    "feedback": {
+      "text": "Great work, but not sure if the response time and accuracy can be optimized further",
+      "timestamp": "2025-04-29T18:15:37.539889"
+    },
+    "save_timestamp": "2025-04-29T18:15:37.540015"
+  }

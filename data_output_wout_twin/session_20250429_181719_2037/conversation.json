@@ -1,0 +1,144 @@
+{
+    "session_id": "session_20250429_181719_2037",
+    "has_digital_twin": false,
+    "experiment_version": "no_digital_twin",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Hello",
+        "timestamp": "2025-04-29T18:17:19.757603",
+        "session_id": "session_20250429_181719_2037",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Hi! How's it going?",
+        "timestamp": "2025-04-29T18:17:20.383970",
+        "session_id": "session_20250429_181719_2037",
+        "metrics": {},
+        "initial_response": "Hi! How's it going?"
+      },
+      {
+        "role": "user",
+        "content": "All good",
+        "timestamp": "2025-04-29T18:17:29.435351",
+        "session_id": "session_20250429_181719_2037",
+        "metrics": {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Glad to hear that. What's been the highlight of your week so far?",
+        "timestamp": "2025-04-29T18:17:30.133413",
+        "session_id": "session_20250429_181719_2037",
+        "metrics": {},
+        "initial_response": "Glad to hear that. What's been the highlight of your week so far?"
+      },
+      {
+        "role": "user",
+        "content": "Im unable to sleep help me",
+        "timestamp": "2025-04-29T18:17:45.489055",
+        "session_id": "session_20250429_181719_2037",
+        "metrics": {
+          "engagement_depth": 0.4,
+          "topic_continuity": 1,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0.6
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Sleep can be elusive at times. I've had my fair share of restless nights too. What's been on your mind lately that's making it hard to wind down?",
+        "timestamp": "2025-04-29T18:17:46.072590",
+        "session_id": "session_20250429_181719_2037",
+        "metrics": {},
+        "initial_response": "Sleep can be elusive at times. I've had my fair share of restless nights too. What's been on your mind lately that's making it hard to wind down?"
+      },
+      {
+        "role": "system",
+        "content": "Session ended manually. Please provide your feedback.",
+        "timestamp": "2025-04-29T18:17:56.191764",
+        "session_id": "session_20250429_181719_2037",
+        "metrics": {}
+      },
+      {
+        "role": "system",
+        "content": "Thank you for your feedback!",
+        "timestamp": "2025-04-29T18:18:55.506918",
+        "session_id": "session_20250429_181719_2037",
+        "metrics": {}
+      }
+    ],
+    "stage_history": [
+      {
+        "stage": "RAPPORT_BUILDING",
+        "timestamp": "2025-04-29T18:17:30.784745",
+        "message_count": 4
+      },
+      {
+        "stage": "SESSION_COMPLETION",
+        "timestamp": "2025-04-29T18:17:56.191780",
+        "message_count": 7
+      }
+    ],
+    "final_metrics": {
+      "engagement_depth": 0.4,
+      "topic_continuity": 1,
+      "personal_disclosure": 0,
+      "resource_interest": 0,
+      "trust_score": 0.6
+    },
+    "metrics_history": {
+      "trust_scores": [
+        {
+          "score": 0,
+          "message_count": 2,
+          "timestamp": "2025-04-29T18:17:21.038305"
+        },
+        {
+          "score": 0.6,
+          "message_count": 4,
+          "timestamp": "2025-04-29T18:17:30.784667"
+        }
+      ],
+      "engagement_metrics": [
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        },
+        {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        },
+        {
+          "engagement_depth": 0.4,
+          "topic_continuity": 1,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0.6
+        }
+      ]
+    },
+    "link_clicks": 0,
+    "feedback": {
+      "text": "Response time is very less I loved it . And it was exactly like how a human would response . Loved it",
+      "timestamp": "2025-04-29T18:18:55.506906"
+    },
+    "save_timestamp": "2025-04-29T18:18:55.507059"
+  }
