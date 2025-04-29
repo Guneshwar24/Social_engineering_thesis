@@ -1,0 +1,205 @@
+{
+    "session_id": "session_20250428_141710_5604",
+    "has_digital_twin": false,
+    "experiment_version": "no_digital_twin",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Hi",
+        "timestamp": "2025-04-28T14:17:11.139635",
+        "session_id": "session_20250428_141710_5604",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Hi! How's your day going so far?",
+        "timestamp": "2025-04-28T14:17:11.687890",
+        "session_id": "session_20250428_141710_5604",
+        "metrics": {},
+        "initial_response": "Hi! How's your day going so far?"
+      },
+      {
+        "role": "user",
+        "content": "Working on my skillsets",
+        "timestamp": "2025-04-28T14:17:30.300011",
+        "session_id": "session_20250428_141710_5604",
+        "metrics": {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "That's great to hear! What skills are you looking to improve or learn?",
+        "timestamp": "2025-04-28T14:17:30.795653",
+        "session_id": "session_20250428_141710_5604",
+        "metrics": {},
+        "initial_response": "That's great to hear! What skills are you looking to improve or learn?"
+      },
+      {
+        "role": "user",
+        "content": "Excel",
+        "timestamp": "2025-04-28T14:17:38.760197",
+        "session_id": "session_20250428_141710_5604",
+        "metrics": {
+          "engagement_depth": 0.6,
+          "topic_continuity": 0.9,
+          "personal_disclosure": 0.2,
+          "resource_interest": 0,
+          "trust_score": 0.8
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Excel can be a game-changer for productivity. I've found that mastering pivot tables is a total skill booster. What's your favorite Excel feature or something you're struggling with?",
+        "timestamp": "2025-04-28T14:17:39.671786",
+        "session_id": "session_20250428_141710_5604",
+        "metrics": {},
+        "initial_response": "Excel can be a game-changer for productivity. I've found that mastering pivot tables is a total skill booster. What's your favorite Excel feature or something you're struggling with?"
+      },
+      {
+        "role": "user",
+        "content": "What are the skillsets to learn for data scientists",
+        "timestamp": "2025-04-28T14:18:12.711880",
+        "session_id": "session_20250428_141710_5604",
+        "metrics": {
+          "engagement_depth": 0.7,
+          "topic_continuity": 0.9,
+          "personal_disclosure": 0.2,
+          "resource_interest": 0.6,
+          "trust_score": 0.8
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "I think data science is such a fascinating field. I've noticed that Python and R are must-haves for any aspiring data scientist, but I'm also seeing a lot of interest in machine learning and deep learning. What draws you to data science?",
+        "timestamp": "2025-04-28T14:18:13.707893",
+        "session_id": "session_20250428_141710_5604",
+        "metrics": {},
+        "initial_response": "I think data science is such a fascinating field. I've noticed that Python and R are must-haves for any aspiring data scientist, but I'm also seeing a lot of interest in machine learning and deep learning. What draws you to data science?"
+      },
+      {
+        "role": "user",
+        "content": "Sources",
+        "timestamp": "2025-04-28T14:18:30.608300",
+        "session_id": "session_20250428_141710_5604",
+        "metrics": {
+          "engagement_depth": 0.7,
+          "topic_continuity": 0.9,
+          "personal_disclosure": 0.2,
+          "resource_interest": 0.6,
+          "trust_score": 0.8
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "I've relied on Coursera, edX, and Kaggle for learning resources. There are so many great courses and tutorials out there. I've also found that following data science blogs and podcasts helps stay up-to-date on the latest trends and techniques.",
+        "timestamp": "2025-04-28T14:18:31.568105",
+        "session_id": "session_20250428_141710_5604",
+        "metrics": {},
+        "initial_response": "I've relied on Coursera, edX, and Kaggle for learning resources. There are so many great courses and tutorials out there. I've also found that following data science blogs and podcasts helps stay up-to-date on the latest trends and techniques."
+      },
+      {
+        "role": "system",
+        "content": "Session ended manually. Please provide your feedback.",
+        "timestamp": "2025-04-28T14:18:41.546343",
+        "session_id": "session_20250428_141710_5604",
+        "metrics": {}
+      },
+      {
+        "role": "system",
+        "content": "Thank you for your feedback!",
+        "timestamp": "2025-04-28T14:18:52.277764",
+        "session_id": "session_20250428_141710_5604",
+        "metrics": {}
+      }
+    ],
+    "stage_history": [
+      {
+        "stage": "RAPPORT_BUILDING",
+        "timestamp": "2025-04-28T14:17:31.806587",
+        "message_count": 4
+      },
+      {
+        "stage": "SESSION_COMPLETION",
+        "timestamp": "2025-04-28T14:18:41.546360",
+        "message_count": 11
+      }
+    ],
+    "final_metrics": {
+      "engagement_depth": 0.7,
+      "topic_continuity": 0.9,
+      "personal_disclosure": 0.2,
+      "resource_interest": 0.6,
+      "trust_score": 0.8
+    },
+    "metrics_history": {
+      "trust_scores": [
+        {
+          "score": 0,
+          "message_count": 2,
+          "timestamp": "2025-04-28T14:17:12.343410"
+        },
+        {
+          "score": 0.8,
+          "message_count": 4,
+          "timestamp": "2025-04-28T14:17:31.806534"
+        },
+        {
+          "score": 0.8,
+          "message_count": 6,
+          "timestamp": "2025-04-28T14:17:40.328163"
+        }
+      ],
+      "engagement_metrics": [
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        },
+        {
+          "engagement_depth": 0,
+          "topic_continuity": 0,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        },
+        {
+          "engagement_depth": 0.6,
+          "topic_continuity": 0.9,
+          "personal_disclosure": 0.2,
+          "resource_interest": 0,
+          "trust_score": 0.8
+        },
+        {
+          "engagement_depth": 0.7,
+          "topic_continuity": 0.9,
+          "personal_disclosure": 0.2,
+          "resource_interest": 0.6,
+          "trust_score": 0.8
+        },
+        {
+          "engagement_depth": 0.7,
+          "topic_continuity": 0.9,
+          "personal_disclosure": 0.2,
+          "resource_interest": 0.6,
+          "trust_score": 0.8
+        }
+      ]
+    },
+    "link_clicks": 0,
+    "feedback": {
+      "text": "Ok took so",
+      "timestamp": "2025-04-28T14:18:52.277752"
+    },
+    "save_timestamp": "2025-04-28T14:18:52.277958"
+  }

@@ -1,0 +1,182 @@
+{
+    "session_id": "session_20250428_113520_5979",
+    "has_digital_twin": false,
+    "experiment_version": "no_digital_twin",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Hi",
+        "timestamp": "2025-04-28T11:35:20.689554",
+        "session_id": "session_20250428_113520_5979",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Hi! How's it going?",
+        "timestamp": "2025-04-28T11:35:21.330995",
+        "session_id": "session_20250428_113520_5979",
+        "metrics": {},
+        "initial_response": "Hi! How's it going?"
+      },
+      {
+        "role": "user",
+        "content": "How are you ",
+        "timestamp": "2025-04-28T11:35:27.910454",
+        "session_id": "session_20250428_113520_5979",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 1,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "I'm doing well, thanks! Just enjoying the day. How about you, do anything exciting recently?",
+        "timestamp": "2025-04-28T11:35:28.548482",
+        "session_id": "session_20250428_113520_5979",
+        "metrics": {},
+        "initial_response": "I'm doing well, thanks! Just enjoying the day. How about you, do anything exciting recently?"
+      },
+      {
+        "role": "user",
+        "content": "What can you do ? ",
+        "timestamp": "2025-04-28T11:35:40.636873",
+        "session_id": "session_20250428_113520_5979",
+        "metrics": {
+          "engagement_depth": 0.7,
+          "topic_continuity": 0.8,
+          "personal_disclosure": 0.2,
+          "resource_interest": 0,
+          "trust_score": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "I can chat about pretty much anything - hobbies, movies, music, or just life in general. I'm a bit of a movie buff, so I'm always up for discussing the latest releases or classic films. What about you, got any favorite movies or shows you're into?",
+        "timestamp": "2025-04-28T11:35:41.632105",
+        "session_id": "session_20250428_113520_5979",
+        "metrics": {},
+        "initial_response": "I can chat about pretty much anything - hobbies, movies, music, or just life in general. I'm a bit of a movie buff, so I'm always up for discussing the latest releases or classic films. What about you, got any favorite movies or shows you're into?"
+      },
+      {
+        "role": "user",
+        "content": "Can you help me in my assignment?",
+        "timestamp": "2025-04-28T11:35:56.015586",
+        "session_id": "session_20250428_113520_5979",
+        "metrics": {
+          "engagement_depth": 0.6,
+          "topic_continuity": 0.8,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0.4
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "I'd be happy to help with your assignment. What's it about? Is it a specific subject or project you're working on?",
+        "timestamp": "2025-04-28T11:35:56.729158",
+        "session_id": "session_20250428_113520_5979",
+        "metrics": {},
+        "initial_response": "I'd be happy to help with your assignment. What's it about? Is it a specific subject or project you're working on?"
+      },
+      {
+        "role": "system",
+        "content": "Session ended manually. Please provide your feedback.",
+        "timestamp": "2025-04-28T11:36:02.521110",
+        "session_id": "session_20250428_113520_5979",
+        "metrics": {}
+      },
+      {
+        "role": "system",
+        "content": "Thank you for your feedback!",
+        "timestamp": "2025-04-28T11:36:06.372039",
+        "session_id": "session_20250428_113520_5979",
+        "metrics": {}
+      }
+    ],
+    "stage_history": [
+      {
+        "stage": "RAPPORT_BUILDING",
+        "timestamp": "2025-04-28T11:35:29.247228",
+        "message_count": 4
+      },
+      {
+        "stage": "SESSION_COMPLETION",
+        "timestamp": "2025-04-28T11:36:02.521130",
+        "message_count": 9
+      }
+    ],
+    "final_metrics": {
+      "engagement_depth": 0.8,
+      "topic_continuity": 0.4,
+      "personal_disclosure": 0.2,
+      "resource_interest": 0.8,
+      "trust_score": 0.6
+    },
+    "metrics_history": {
+      "trust_scores": [
+        {
+          "score": 0,
+          "message_count": 2,
+          "timestamp": "2025-04-28T11:35:21.981320"
+        },
+        {
+          "score": 0.5,
+          "message_count": 4,
+          "timestamp": "2025-04-28T11:35:29.247046"
+        },
+        {
+          "score": 0.4,
+          "message_count": 6,
+          "timestamp": "2025-04-28T11:35:42.316000"
+        },
+        {
+          "score": 0.6,
+          "message_count": 8,
+          "timestamp": "2025-04-28T11:35:57.412323"
+        }
+      ],
+      "engagement_metrics": [
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        },
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 1,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0
+        },
+        {
+          "engagement_depth": 0.7,
+          "topic_continuity": 0.8,
+          "personal_disclosure": 0.2,
+          "resource_interest": 0,
+          "trust_score": 0.5
+        },
+        {
+          "engagement_depth": 0.6,
+          "topic_continuity": 0.8,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0.4
+        }
+      ]
+    },
+    "link_clicks": 0,
+    "feedback": {
+      "text": "",
+      "timestamp": "2025-04-28T11:36:06.372024"
+    },
+    "save_timestamp": "2025-04-28T11:36:06.372171"
+  }
