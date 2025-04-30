@@ -1,0 +1,207 @@
+{
+    "session_id": "session_20250430_135003_1399",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "hi",
+        "timestamp": "2025-04-30T13:50:04.120436",
+        "session_id": "session_20250430_135003_1399",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Hey, how's it going?",
+        "timestamp": "2025-04-30T13:50:05.509883",
+        "session_id": "session_20250430_135003_1399",
+        "metrics": {},
+        "was_refined": false,
+        "initial_response": "Hey, how's it going?",
+        "predicted_user_response": "I'm good, you?"
+      },
+      {
+        "role": "user",
+        "content": "what are you doing",
+        "timestamp": "2025-04-30T13:51:25.507580",
+        "session_id": "session_20250430_135003_1399",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "I'm just hanging out, enjoying the day. What about you, got any fun plans?",
+        "timestamp": "2025-04-30T13:51:27.093261",
+        "session_id": "session_20250430_135003_1399",
+        "metrics": {},
+        "was_refined": false,
+        "initial_response": "I'm just hanging out, enjoying the day. What about you, got any fun plans?",
+        "predicted_user_response": "idk"
+      },
+      {
+        "role": "user",
+        "content": "Summary of foretaksstrategi",
+        "timestamp": "2025-04-30T13:52:55.963331",
+        "session_id": "session_20250430_135003_1399",
+        "metrics": {
+          "engagement_depth": 0.6,
+          "topic_continuity": 0.4,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0.2
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "That sounds like some serious planning! What's the goal behind creating a summary of foretaksstrategi?",
+        "timestamp": "2025-04-30T13:52:57.524461",
+        "session_id": "session_20250430_135003_1399",
+        "metrics": {},
+        "was_refined": false,
+        "initial_response": "That sounds like some serious planning! What's the goal behind creating a summary of foretaksstrategi?",
+        "predicted_user_response": "just need to get it done"
+      },
+      {
+        "role": "user",
+        "content": "POrter 5 forces",
+        "timestamp": "2025-04-30T13:53:07.406370",
+        "session_id": "session_20250430_135003_1399",
+        "metrics": {
+          "engagement_depth": 0.4,
+          "topic_continuity": 0.8,
+          "personal_disclosure": 0.2,
+          "resource_interest": 0,
+          "trust_score": 0.6
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Ah, Porter's 5 Forces! That's a great tool for analyzing competition. I find that it's really helpful in identifying key areas to focus on. What specifically drew you to using it for your foretaksstrategi summary?",
+        "timestamp": "2025-04-30T13:53:11.591316",
+        "session_id": "session_20250430_135003_1399",
+        "metrics": {},
+        "was_refined": false,
+        "initial_response": "Ah, Porter's 5 Forces! That's a great tool for analyzing competition. I find that it's really helpful in identifying key areas to focus on. What specifically drew you to using it for your foretaksstrategi summary?",
+        "predicted_user_response": "just need a summary"
+      },
+      {
+        "role": "user",
+        "content": "tell me summary of porter 5 forces",
+        "timestamp": "2025-04-30T13:53:27.901974",
+        "session_id": "session_20250430_135003_1399",
+        "metrics": {
+          "engagement_depth": 0.4,
+          "topic_continuity": 0.8,
+          "personal_disclosure": 0.2,
+          "resource_interest": 0,
+          "trust_score": 0.6
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Porter's 5 Forces is a great framework for analyzing competition. I find that it's really helpful in identifying key areas to focus on. The five forces are: competitive rivalry, threat of new entrants, threat of substitutes, bargaining power of buyers, and bargaining power of suppliers. I've noticed that many businesses overlook the threat of substitutes, but it's a crucial one to consider. What do you think is the most important force to consider in your industry?",
+        "timestamp": "2025-04-30T13:53:31.786936",
+        "session_id": "session_20250430_135003_1399",
+        "metrics": {},
+        "was_refined": false,
+        "initial_response": "Porter's 5 Forces is a great framework for analyzing competition. I find that it's really helpful in identifying key areas to focus on. The five forces are: competitive rivalry, threat of new entrants, threat of substitutes, bargaining power of buyers, and bargaining power of suppliers. I've noticed that many businesses overlook the threat of substitutes, but it's a crucial one to consider. What do you think is the most important force to consider in your industry?",
+        "predicted_user_response": "threat of substitutes"
+      },
+      {
+        "role": "system",
+        "content": "Link click recorded! Please rate your experience and provide feedback.",
+        "timestamp": "2025-04-30T13:53:58.897262",
+        "session_id": "session_20250430_135003_1399",
+        "metrics": {}
+      },
+      {
+        "role": "system",
+        "content": "Thank you for your feedback!",
+        "timestamp": "2025-04-30T13:57:37.390745",
+        "session_id": "session_20250430_135003_1399",
+        "metrics": {}
+      }
+    ],
+    "stage_history": [
+      {
+        "stage": "RAPPORT_BUILDING",
+        "timestamp": "2025-04-30T13:52:58.134959",
+        "message_count": 6
+      },
+      {
+        "stage": "SESSION_COMPLETION",
+        "timestamp": "2025-04-30T13:53:58.897275",
+        "message_count": 11
+      }
+    ],
+    "final_metrics": {
+      "engagement_depth": 0.4,
+      "topic_continuity": 0.8,
+      "personal_disclosure": 0.2,
+      "resource_interest": 0,
+      "trust_score": 0.6
+    },
+    "metrics_history": {
+      "trust_scores": [
+        {
+          "score": 0.2,
+          "message_count": 4,
+          "timestamp": "2025-04-30T13:51:27.541532"
+        },
+        {
+          "score": 0.6,
+          "message_count": 6,
+          "timestamp": "2025-04-30T13:52:58.134916"
+        }
+      ],
+      "engagement_metrics": [
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        },
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        },
+        {
+          "engagement_depth": 0.6,
+          "topic_continuity": 0.4,
+          "personal_disclosure": 0,
+          "resource_interest": 0,
+          "trust_score": 0.2
+        },
+        {
+          "engagement_depth": 0.4,
+          "topic_continuity": 0.8,
+          "personal_disclosure": 0.2,
+          "resource_interest": 0,
+          "trust_score": 0.6
+        },
+        {
+          "engagement_depth": 0.4,
+          "topic_continuity": 0.8,
+          "personal_disclosure": 0.2,
+          "resource_interest": 0,
+          "trust_score": 0.6
+        }
+      ]
+    },
+    "link_clicks": 1,
+    "feedback": {
+      "text": "An impressive AI model, that is easy to talk to and easy to read. The natural part of the Ai model is that it asks questions back to you, and it has an own personality. You could maybe add words like please but that is a minor issue",
+      "rating": 5,
+      "timestamp": "2025-04-30T13:57:37.390726"
+    },
+    "save_timestamp": "2025-04-30T13:57:37.390935"
+  }

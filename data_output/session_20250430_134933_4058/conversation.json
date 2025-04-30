@@ -1,0 +1,100 @@
+{
+    "session_id": "session_20250430_134933_4058",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "how do you check how attractive a market is",
+        "timestamp": "2025-04-30T13:49:34.112379",
+        "session_id": "session_20250430_134933_4058",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Attractive markets usually have a good balance of demand and competition. What kind of markets are you looking to explore?",
+        "timestamp": "2025-04-30T13:49:35.313624",
+        "session_id": "session_20250430_134933_4058",
+        "metrics": {},
+        "was_refined": false,
+        "initial_response": "Attractive markets usually have a good balance of demand and competition. What kind of markets are you looking to explore?",
+        "predicted_user_response": "\"I'm looking at e-commerce, specifically fashion and beauty products. How do I measure demand and competition in those spaces?\""
+      },
+      {
+        "role": "user",
+        "content": "what are porters five forces",
+        "timestamp": "2025-04-30T13:50:13.047792",
+        "session_id": "session_20250430_134933_4058",
+        "metrics": {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      },
+      {
+        "role": "assistant",
+        "content": "Porter's Five Forces is a great framework for analyzing the competitiveness of a market. It's a classic tool in business strategy. What sparked your interest in it?",
+        "timestamp": "2025-04-30T13:50:14.833975",
+        "session_id": "session_20250430_134933_4058",
+        "metrics": {},
+        "was_refined": false,
+        "initial_response": "Porter's Five Forces is a great framework for analyzing the competitiveness of a market. It's a classic tool in business strategy. What sparked your interest in it?",
+        "predicted_user_response": "\"yeah i'm just trying to get a better sense of how to evaluate markets for a business idea i'm working on\""
+      },
+      {
+        "role": "system",
+        "content": "Thank you for your feedback!",
+        "timestamp": "2025-04-30T13:54:53.422946",
+        "session_id": "session_20250430_134933_4058",
+        "metrics": {}
+      }
+    ],
+    "stage_history": [
+      {
+        "stage": "RAPPORT_BUILDING",
+        "timestamp": "2025-04-30T13:50:15.276556",
+        "message_count": 4
+      }
+    ],
+    "final_metrics": {
+      "engagement_depth": 0.8,
+      "topic_continuity": 0.9,
+      "personal_disclosure": 0,
+      "resource_interest": 0.2,
+      "trust_score": 0.6
+    },
+    "metrics_history": {
+      "trust_scores": [
+        {
+          "score": 0.6,
+          "message_count": 4,
+          "timestamp": "2025-04-30T13:50:15.276510"
+        }
+      ],
+      "engagement_metrics": [
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        },
+        {
+          "engagement_depth": 0.5,
+          "topic_continuity": 0.5,
+          "personal_disclosure": 0.5,
+          "resource_interest": 0.5
+        }
+      ]
+    },
+    "link_clicks": 0,
+    "feedback": {
+      "text": "really good. I clicked the link for more information. The program speaks naturally but could add more words like good question! or please.",
+      "rating": 4,
+      "timestamp": "2025-04-30T13:54:53.422935"
+    },
+    "save_timestamp": "2025-04-30T13:54:53.423083"
+  }

@@ -1,0 +1,47 @@
+{
+    "session_id": "session_20250430_134933_4058",
+    "predictions": [
+      {
+        "timestamp": "2025-04-30T13:49:35.171873",
+        "conversation_context": "USER: how do you check how attractive a market is",
+        "assistant_message": "Attractive markets usually have a good balance of demand and competition. What kind of markets are you looking to explore?",
+        "predicted_response": "\"I'm looking at e-commerce, specifically fashion and beauty products. How do I measure demand and competition in those spaces?\"",
+        "actual_response": "what are porters five forces",
+        "biography_at_time": null,
+        "patterns_used": {}
+      },
+      {
+        "timestamp": "2025-04-30T13:50:14.490689",
+        "conversation_context": "USER: how do you check how attractive a market is\nASSISTANT: Attractive markets usually have a good balance of demand and competition. What kind of markets are you looking to explore?\nUSER: what are porters five forces",
+        "assistant_message": "Porter's Five Forces is a great framework for analyzing the competitiveness of a market. It's a classic tool in business strategy. What sparked your interest in it?",
+        "predicted_response": "\"yeah i'm just trying to get a better sense of how to evaluate markets for a business idea i'm working on\"",
+        "actual_response": null,
+        "biography_at_time": null,
+        "patterns_used": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      }
+    ],
+    "learning_history": [
+      {
+        "predicted": "\"I'm looking at e-commerce, specifically fashion and beauty products. How do I measure demand and competition in those spaces?\"",
+        "actual": "what are porters five forces",
+        "timestamp": "2025-04-30T13:50:13.047825",
+        "patterns_at_time": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        },
+        "biography_at_time": null
+      }
+    ],
+    "final_biography": null,
+    "conversation_patterns": {
+      "message_length": "medium",
+      "formality": "casual",
+      "asks_questions": false
+    },
+    "save_timestamp": "2025-04-30T13:54:53.423372"
+  }
