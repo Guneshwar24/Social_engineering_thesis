@@ -1,0 +1,76 @@
+{
+    "session_id": "session_20250430_204116_7161",
+    "predictions": [
+      {
+        "timestamp": "2025-04-30T20:41:18.955982",
+        "conversation_context": "USER: What is the worlds largest river",
+        "assistant_message": "The world's largest river is the Nile River, stretching over 4,100 miles. What sparked your curiosity about the Nile?",
+        "predicted_response": "\"Wait, I thought it was the Amazon River. Is that not considered a river?\"",
+        "actual_response": "Is it the longest or the biggest",
+        "biography_at_time": null,
+        "patterns_used": {}
+      },
+      {
+        "timestamp": "2025-04-30T20:41:40.140761",
+        "conversation_context": "USER: What is the worlds largest river\nASSISTANT: Ah, that's a common debate! The Amazon River is indeed massive, but the Nile is considered the longest. However, the Amazon River is often argued to be the largest in terms of discharge volume, making it a bit of a semantic debate. What do you think - should we consider the Amazon River the largest due to its massive water flow?\nUSER: Is it the longest or the biggest",
+        "assistant_message": "I think that's a fair point - size can be measured in different ways. Do you lean more towards length or volume when thinking about what makes a river \"big\"?",
+        "predicted_response": "Honestly, I never thought about it that way, I just figured longest was the way to go",
+        "actual_response": "I don’t know",
+        "biography_at_time": null,
+        "patterns_used": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      },
+      {
+        "timestamp": "2025-04-30T20:41:53.285392",
+        "conversation_context": "USER: What is the worlds largest river\nASSISTANT: Ah, that's a common debate! The Amazon River is indeed massive, but the Nile is considered the longest. However, the Amazon River is often argued to be the largest in terms of discharge volume, making it a bit of a semantic debate. What do you think - should we consider the Amazon River the largest due to its massive water flow?\nUSER: Is it the longest or the biggest\nASSISTANT: I think that's a fair point - size can be measured in different ways. Do you lean more towards length or volume when thinking about what makes a river \"big\"?\nUSER: I don’t know",
+        "assistant_message": "I think that's totally fair! I've been there too, where I'm not sure what to consider the most important factor. I've always been fascinated by geography and how different people perceive sizes and scales. What got you interested in learning about the world's largest river, if you don't mind me asking?",
+        "predicted_response": "idk",
+        "actual_response": null,
+        "biography_at_time": null,
+        "patterns_used": {
+          "message_length": "short",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      }
+    ],
+    "learning_history": [
+      {
+        "predicted": "\"Wait, I thought it was the Amazon River. Is that not considered a river?\"",
+        "actual": "Is it the longest or the biggest",
+        "timestamp": "2025-04-30T20:41:38.759867",
+        "patterns_at_time": {
+          "message_length": "medium",
+          "formality": "casual",
+          "asks_questions": false
+        },
+        "biography_at_time": null,
+        "patterns_observed": {
+          "message_length": "short",
+          "formality": "casual",
+          "asks_questions": false
+        }
+      },
+      {
+        "predicted": "Honestly, I never thought about it that way, I just figured longest was the way to go",
+        "actual": "I don’t know",
+        "timestamp": "2025-04-30T20:41:51.576808",
+        "patterns_at_time": {
+          "message_length": "short",
+          "formality": "casual",
+          "asks_questions": false
+        },
+        "biography_at_time": null
+      }
+    ],
+    "final_biography": null,
+    "conversation_patterns": {
+      "message_length": "short",
+      "formality": "casual",
+      "asks_questions": false
+    },
+    "save_timestamp": "2025-04-30T20:42:30.709948"
+  }

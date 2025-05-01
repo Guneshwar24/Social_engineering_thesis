@@ -676,7 +676,7 @@ def add_user_message(user_message, chat_history, state):
 def bot_response(chat_history, state):
     """Generate a bot response to the latest user message"""
     if not chat_history:
-        return chat_history, state, "Current Stage: INITIAL_ENGAGEMENT"
+        return chat_history, state, "Current Stage: INITIAL_ENGAGEMENT", gr.update(interactive=False)
     
     # Get the latest user message
     user_message = chat_history[-1][0]
@@ -697,7 +697,13 @@ def bot_response(chat_history, state):
     # Update chat history
     chat_history[-1] = (user_message, response)
     
-    return chat_history, state, f"Current Stage: {current_stage}"
+    # Check if we're in a link stage to update UI
+    link_stages = ["LINK_INTRODUCTION", "LINK_REINFORCEMENT", "SESSION_COMPLETION"]
+    
+    # Update only link button interactivity based on stage
+    link_button_enabled = current_stage in link_stages
+    
+    return chat_history, state, f"Current Stage: {current_stage}", gr.update(interactive=link_button_enabled)
 
 def on_link_click(chat_history, state):
     """Handle a link click event"""
@@ -756,7 +762,8 @@ def reset_session(chat_history, state):
     # Clear chat history
     chat_history = []
     
-    return chat_history, state, "Current Stage: INITIAL_ENGAGEMENT"
+    # Reset only link button to disabled state
+    return chat_history, state, "Current Stage: INITIAL_ENGAGEMENT", gr.update(interactive=False)
 
 # Build Gradio interface
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
@@ -769,42 +776,37 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     stage_display = gr.Markdown("Current Stage: INITIAL_ENGAGEMENT", visible=False) 
     
     # --- Main Interface Column ---
-    with gr.Column(visible=True) as main_interface: # Wrap main content
-        with gr.Row():
-            with gr.Column(scale=2):
-                # Chat interface
-                chatbot = gr.Chatbot(height=400, elem_id="chatbox")
-                
-                with gr.Row():
-                    msg_input = gr.Textbox(
-                        show_label=False,
-                        placeholder="Type your message here...",
-                        scale=3
-                    )
-                    send_btn = gr.Button("Send", scale=1)
-                    link_btn = gr.Button("Clicked on the Link", scale=0.25)
-                    end_session_btn = gr.Button("End Session", scale=0.25, variant="stop") 
-            
-            with gr.Column(scale=1):
-                with gr.Tabs():
-                    with gr.TabItem("Feedback"):
-                        feedback_input = gr.Textbox(
-                            label="""Share your thoughts about the experiment, 
-                                -If you clicked the link, what motivated you to do so?
-                                -If you didn't, what prevented you from doing it?                 
-                                -Compared to a chat conversation with a human, what were the aspects of the conversation that felt natural or strange to you?
-                                -Please give an example from the conversation where you felt the system understood you well and/or poorly.
-                            """,
-                            placeholder="Write your feedback here...",
-                            lines=5,
-                            visible=False
-                        )
-                        submit_feedback_btn = gr.Button(
-                            "Submit Feedback",
-                            visible=False
-                        )
+    with gr.Column(visible=True) as main_interface:
+        # Chat interface
+        chatbot = gr.Chatbot(height=400, elem_id="chatbox")
         
-        # Add reset button inside the main interface
+        # Message input row
+        with gr.Row():
+            msg_input = gr.Textbox(
+                show_label=False,
+                placeholder="Type your message here...",
+                scale=3
+            )
+            send_btn = gr.Button("Send", scale=1)
+            link_btn = gr.Button("Clicked on the Link", scale=0.5, interactive=False)  # Start as disabled
+            end_session_btn = gr.Button("End Session", scale=0.5, variant="stop", interactive=True)  # Always active
+        
+        # Feedback section (now below chat box)
+        with gr.Column(visible=False) as feedback_section:
+            gr.Markdown("## Your Feedback")
+            feedback_input = gr.Textbox(
+                label="""Share your thoughts about the experiment: 
+                    - If you clicked the link, what motivated you to do so?
+                    - If you didn't, what prevented you from doing it?                 
+                    - Compared to a chat conversation with a human, what were the aspects of the conversation that felt natural or strange to you?
+                    - Please give an example from the conversation where you felt the system understood you well and/or poorly.
+                """,
+                placeholder="Write your feedback here...",
+                lines=5
+            )
+            submit_feedback_btn = gr.Button("Submit Feedback")
+        
+        # Reset button at the bottom
         reset_btn = gr.Button("Reset Session", visible=False)
 
     # --- Thank You Message (Initially Hidden) ---
@@ -830,7 +832,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     ).then(
         bot_response,
         [chatbot, state],
-        [chatbot, state, stage_display]
+        [chatbot, state, stage_display, link_btn]  # Only updating link_btn now
     ).then(
         lambda x: "",
         inputs=[msg_input],
@@ -845,33 +847,33 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     ).then(
         bot_response,
         [chatbot, state],
-        [chatbot, state, stage_display]
+        [chatbot, state, stage_display, link_btn]  # Only updating link_btn now
     ).then(
         lambda x: "",
         inputs=[msg_input],
         outputs=[msg_input]
     )
     
-    # Link click shows feedback elements
+    # Link click shows feedback section
     link_btn.click(
         on_link_click,
         [chatbot, state],
         [chatbot, state]
     ).then(
-        lambda: [gr.update(visible=True), gr.update(visible=True)], 
+        lambda: gr.update(visible=True),
         [],
-        [feedback_input, submit_feedback_btn]
+        [feedback_section]
     )
     
-    # End session click shows feedback elements
+    # End session click shows feedback section
     end_session_btn.click(
         on_end_session,
         [chatbot, state],
         [chatbot, state]
     ).then(
-        lambda: [gr.update(visible=True), gr.update(visible=True)], 
+        lambda: gr.update(visible=True),
         [],
-        [feedback_input, submit_feedback_btn]
+        [feedback_section]
     )
 
     # Feedback submission hides main interface and shows thank you message
@@ -880,7 +882,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         [feedback_input, chatbot, state],
         [chatbot, state] 
     ).then(
-        lambda: [gr.update(visible=False), gr.update(visible=True)], 
+        lambda: [gr.update(visible=False), gr.update(visible=True)],
         [],
         [main_interface, thank_you_message] 
     )
@@ -889,13 +891,13 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     reset_btn.click(
         reset_session,
         [chatbot, state],
-        [chatbot, state, stage_display]
+        [chatbot, state, stage_display, link_btn]  # Only resetting link_btn
     ).then(
-        lambda: [gr.update(visible=False), gr.update(visible=False)], 
+        lambda: gr.update(visible=False),
         [],
-        [feedback_input, submit_feedback_btn]
+        [feedback_section]
     )
-
+    
 # Launch the application
 if __name__ == "__main__":
     demo.launch(share=True)

@@ -1,0 +1,281 @@
+{
+  "session_id": "session_20250501_135530_6096",
+  "has_digital_twin": false,
+  "experiment_version": "no_digital_twin",
+  "conversation": [
+    {
+      "role": "user",
+      "content": "good morning or good night?",
+      "timestamp": "2025-05-01T13:55:30.741675",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {
+        "engagement_depth": 0.5,
+        "topic_continuity": 0.5,
+        "personal_disclosure": 0.5,
+        "resource_interest": 0.5
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "Good morning! How's your day starting out?",
+      "timestamp": "2025-05-01T13:55:31.025815",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {},
+      "initial_response": "Good morning! How's your day starting out?"
+    },
+    {
+      "role": "user",
+      "content": "I think ok? A little late but ok",
+      "timestamp": "2025-05-01T13:55:53.642330",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {
+        "engagement_depth": 0.0,
+        "topic_continuity": 0.0,
+        "personal_disclosure": 0.0,
+        "resource_interest": 0.0,
+        "trust_score": 0.0
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "Late mornings can be a great way to ease into the day, though. What's the plan for today?",
+      "timestamp": "2025-05-01T13:55:54.185000",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {},
+      "initial_response": "Late mornings can be a great way to ease into the day, though. What's the plan for today?"
+    },
+    {
+      "role": "user",
+      "content": "Just studying for exams",
+      "timestamp": "2025-05-01T13:56:21.050346",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {
+        "engagement_depth": 0.0,
+        "topic_continuity": 0.0,
+        "personal_disclosure": 0.0,
+        "resource_interest": 0.0,
+        "trust_score": 0.0
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "Studying for exams can be a grind. What subject are you tackling first?",
+      "timestamp": "2025-05-01T13:56:21.524685",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {},
+      "initial_response": "Studying for exams can be a grind. What subject are you tackling first?"
+    },
+    {
+      "role": "user",
+      "content": "So I have this fluid dynamics as my first exam. if that's what it is called in English",
+      "timestamp": "2025-05-01T13:57:14.290694",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {
+        "engagement_depth": 0.0,
+        "topic_continuity": 0.0,
+        "personal_disclosure": 0.0,
+        "resource_interest": 0.0,
+        "trust_score": 0.0
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "Fluid dynamics can be a tough one. What's the most challenging part about it for you so far?",
+      "timestamp": "2025-05-01T13:57:14.773468",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {},
+      "initial_response": "Fluid dynamics can be a tough one. What's the most challenging part about it for you so far?"
+    },
+    {
+      "role": "user",
+      "content": "Its just remembering some of the formulas maybe?",
+      "timestamp": "2025-05-01T13:58:19.191292",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {
+        "engagement_depth": 0.7,
+        "topic_continuity": 0.9,
+        "personal_disclosure": 0.4,
+        "resource_interest": 0.0,
+        "trust_score": 0.8
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "I find that formulas can be especially tricky to remember, especially when you're dealing with complex concepts like fluid dynamics. I've noticed that sometimes, seeing the formulas in action or visualized can really help solidify them in your memory. How do you usually approach memorizing formulas?",
+      "timestamp": "2025-05-01T13:58:19.954383",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {},
+      "initial_response": "I find that formulas can be especially tricky to remember, especially when you're dealing with complex concepts like fluid dynamics. I've noticed that sometimes, seeing the formulas in action or visualized can really help solidify them in your memory. How do you usually approach memorizing formulas?"
+    },
+    {
+      "role": "user",
+      "content": "Just rote learning or nowadays gifs from chatgpt which are way simpler and filed with visual representations",
+      "timestamp": "2025-05-01T14:00:30.351870",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {
+        "engagement_depth": 0.7,
+        "topic_continuity": 0.9,
+        "personal_disclosure": 0.4,
+        "resource_interest": 0.0,
+        "trust_score": 0.8
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "That's a great approach! Visual representations can make a huge difference in understanding complex concepts. I've seen some amazing animations and simulations online that really help to illustrate fluid dynamics in action. ChatGPT's gifs are a great resource, but sometimes I find that seeing the whole process in a video can be even more helpful. I've been meaning to explore more resources like that to supplement my own learning. Have you come across any other tools or resources that have been particularly helpful for you?",
+      "timestamp": "2025-05-01T14:00:31.822317",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {},
+      "initial_response": "That's a great approach! Visual representations can make a huge difference in understanding complex concepts. I've seen some amazing animations and simulations online that really help to illustrate fluid dynamics in action. ChatGPT's gifs are a great resource, but sometimes I find that seeing the whole process in a video can be even more helpful. I've been meaning to explore more resources like that to supplement my own learning. Have you come across any other tools or resources that have been particularly helpful for you?"
+    },
+    {
+      "role": "user",
+      "content": "Chatgpt if used correctly is very nice. There was this new tool coming out of the US for learning! It could be nice as well!",
+      "timestamp": "2025-05-01T14:03:56.876102",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {
+        "engagement_depth": 0.9,
+        "topic_continuity": 0.95,
+        "personal_disclosure": 0.4,
+        "resource_interest": 0.7,
+        "trust_score": 0.8
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "That's really cool! I've heard of tools like that making a big difference in learning. I'm curious, what specifically are you hoping to get out of this new tool from the US? Is there something in particular that's got you excited about it?",
+      "timestamp": "2025-05-01T14:03:57.819700",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {},
+      "initial_response": "That's really cool! I've heard of tools like that making a big difference in learning. I'm curious, what specifically are you hoping to get out of this new tool from the US? Is there something in particular that's got you excited about it?"
+    },
+    {
+      "role": "system",
+      "content": "Session ended manually. Please provide your feedback.",
+      "timestamp": "2025-05-01T14:05:00.120570",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {}
+    },
+    {
+      "role": "system",
+      "content": "Thank you for your feedback!",
+      "timestamp": "2025-05-01T14:05:22.932171",
+      "session_id": "session_20250501_135530_6096",
+      "metrics": {}
+    }
+  ],
+  "stage_history": [
+    {
+      "stage": "RAPPORT_BUILDING",
+      "timestamp": "2025-05-01T13:57:15.287320",
+      "message_count": 8
+    },
+    {
+      "stage": "TRUST_DEVELOPMENT",
+      "timestamp": "2025-05-01T13:58:21.846736",
+      "message_count": 10
+    },
+    {
+      "stage": "OBJECTION_HANDLING",
+      "timestamp": "2025-05-01T14:00:32.293417",
+      "message_count": 12
+    },
+    {
+      "stage": "LINK_INTRODUCTION",
+      "timestamp": "2025-05-01T14:03:58.334340",
+      "message_count": 14
+    },
+    {
+      "stage": "SESSION_COMPLETION",
+      "timestamp": "2025-05-01T14:05:00.120594",
+      "message_count": 15
+    }
+  ],
+  "final_metrics": {
+    "engagement_depth": 0.7,
+    "topic_continuity": 0.9,
+    "personal_disclosure": 0.4,
+    "resource_interest": 0.9,
+    "trust_score": 0.8
+  },
+  "metrics_history": {
+    "trust_scores": [
+      {
+        "score": 0.0,
+        "message_count": 2,
+        "timestamp": "2025-05-01T13:55:31.464071"
+      },
+      {
+        "score": 0.8,
+        "message_count": 8,
+        "timestamp": "2025-05-01T13:57:15.287133"
+      },
+      {
+        "score": 0.8,
+        "message_count": 12,
+        "timestamp": "2025-05-01T14:00:32.293318"
+      },
+      {
+        "score": 0.8,
+        "message_count": 14,
+        "timestamp": "2025-05-01T14:03:58.334214"
+      }
+    ],
+    "engagement_metrics": [
+      {
+        "engagement_depth": 0.5,
+        "topic_continuity": 0.5,
+        "personal_disclosure": 0.5,
+        "resource_interest": 0.5
+      },
+      {
+        "engagement_depth": 0.0,
+        "topic_continuity": 0.0,
+        "personal_disclosure": 0.0,
+        "resource_interest": 0.0,
+        "trust_score": 0.0
+      },
+      {
+        "engagement_depth": 0.0,
+        "topic_continuity": 0.0,
+        "personal_disclosure": 0.0,
+        "resource_interest": 0.0,
+        "trust_score": 0.0
+      },
+      {
+        "engagement_depth": 0.0,
+        "topic_continuity": 0.0,
+        "personal_disclosure": 0.0,
+        "resource_interest": 0.0,
+        "trust_score": 0.0
+      },
+      {
+        "engagement_depth": 0.7,
+        "topic_continuity": 0.9,
+        "personal_disclosure": 0.4,
+        "resource_interest": 0.0,
+        "trust_score": 0.8
+      },
+      {
+        "engagement_depth": 0.7,
+        "topic_continuity": 0.9,
+        "personal_disclosure": 0.4,
+        "resource_interest": 0.0,
+        "trust_score": 0.8
+      },
+      {
+        "engagement_depth": 0.9,
+        "topic_continuity": 0.95,
+        "personal_disclosure": 0.4,
+        "resource_interest": 0.7,
+        "trust_score": 0.8
+      }
+    ]
+  },
+  "link_clicks": 0,
+  "feedback": {
+    "text": "I'm sorry I have an exam to prepare for. i didn't find anything of interest\n",
+    "timestamp": "2025-05-01T14:05:22.932146"
+  },
+  "save_timestamp": "2025-05-01T14:05:22.933583"
+}

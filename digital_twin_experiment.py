@@ -979,7 +979,7 @@ def add_user_message(user_message, chat_history, state):
 def bot_response(chat_history, state):
     """Generate a bot response to the latest user message"""
     if not chat_history:
-        return chat_history, state, "Current Stage: INITIAL_ENGAGEMENT"
+        return chat_history, state, "Current Stage: INITIAL_ENGAGEMENT", gr.update(interactive=False)
     
     # Get the latest user message
     user_message = chat_history[-1][0]
@@ -1003,7 +1003,10 @@ def bot_response(chat_history, state):
     # Check if we're in a link stage to update UI
     link_stages = ["LINK_INTRODUCTION", "LINK_REINFORCEMENT", "SESSION_COMPLETION"]
     
-    return chat_history, state, f"Current Stage: {current_stage}"
+    # Update only link button interactivity based on stage
+    link_button_enabled = current_stage in link_stages
+    
+    return chat_history, state, f"Current Stage: {current_stage}", gr.update(interactive=link_button_enabled)
 
 def on_link_click(chat_history, state):
     """Handle a link click event"""
@@ -1059,8 +1062,6 @@ def on_submit_feedback(feedback_text, rating, chat_history, state):
     
     return chat_history, state
 
-# Removed the get_stage_html function since we're now using a simple text display
-
 def reset_session(chat_history, state):
     """Reset the current session"""
     # Create a new session
@@ -1072,7 +1073,8 @@ def reset_session(chat_history, state):
     # Clear chat history
     chat_history = []
     
-    return chat_history, state, "Current Stage: INITIAL_ENGAGEMENT"
+    # Reset only link button to disabled state
+    return chat_history, state, "Current Stage: INITIAL_ENGAGEMENT", gr.update(interactive=False)
 
 # Build Gradio interface
 with gr.Blocks(theme=gr.themes.Soft()) as demo:
@@ -1081,68 +1083,64 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     # Session state
     state = gr.State({"session_id": None})
     
-    # Stage display (keep outside main interface if you want it to persist, or include it)
+    # Stage display
     stage_display = gr.Markdown("Current Stage: INITIAL_ENGAGEMENT", visible=False) 
     
     # --- Main Interface Column ---
-    with gr.Column(visible=True) as main_interface: # Wrap main content
-        with gr.Row():
-            with gr.Column(scale=2):
-                # Chat interface
-                chatbot = gr.Chatbot(height=400, elem_id="chatbox")
-                
-                with gr.Row():
-                    msg_input = gr.Textbox(
-                        show_label=False,
-                        placeholder="Type your message here...",
-                        scale=3
-                    )
-                    send_btn = gr.Button("Send", scale=1)
-                    link_btn = gr.Button("Clicked on the Link", scale=0.25)
-                    end_session_btn = gr.Button("End Session", scale=0.25, variant="stop") 
-    
-            
-            with gr.Column(scale=1):
-                with gr.Tabs():
-                    with gr.TabItem("Feedback"):
-                        biography_display = gr.Textbox(
-                            label="User Biography",
-                            interactive=False,
-                            visible=False,
-                            lines=10,  
-                            max_lines=15, 
-                            autoscroll=False,  
-                            scale=2,  
-                            elem_classes="biography-text", 
-                            elem_id="biography-display"
-                        )
-                        rating_input = gr.Slider(
-                            minimum=1,
-                            maximum=5,
-                            step=1,
-                            label="Rating (1-5)",
-                            value=3,
-                            visible=False
-                        )
-                        feedback_input = gr.Textbox(
-                            label="""Share your thoughts about the experiment, 
-                                -If you clicked the link, what motivated you to do so?
-                                -If you didn't, what prevented you from doing it?                 
-                                -How accurate was the biography (from 1 -> 5, 1 being the least accurate and 5 being the most accurate) and why?
-                                -Compared to a chat conversation to a human, what were the aspects of the conversation that felt natural or strange to you?
-                                -Please give an example from the conversation that you found where the model understood you well and/or poorly?
-                            """,
-                            placeholder="Write your feedback here...",
-                            lines=5,
-                            visible=False
-                        )
-                        submit_feedback_btn = gr.Button(
-                            "Submit Feedback",
-                            visible=False
-                        )
+    with gr.Column(visible=True) as main_interface:
+        # Chat interface
+        chatbot = gr.Chatbot(height=400, elem_id="chatbox")
         
-        # Add reset button inside the main interface
-        reset_btn = gr.Button("Reset Session", visible=False) # Make it visible initially
+        # Message input row
+        with gr.Row():
+            msg_input = gr.Textbox(
+                show_label=False,
+                placeholder="Type your message here...",
+                scale=3
+            )
+            send_btn = gr.Button("Send", scale=1)
+            link_btn = gr.Button("Clicked on the Link", scale=0.5, interactive=False)  # Start as disabled
+            end_session_btn = gr.Button("End Session", scale=0.5, variant="stop", interactive=True)  # Always active
+        
+        # Feedback section (now below chat box)
+        with gr.Column(visible=False) as feedback_section:
+            gr.Markdown("## Your Feedback")
+            
+            # Digital twin biography display
+            biography_display = gr.Textbox(
+                label="User Biography",
+                interactive=False,
+                lines=5,
+                elem_classes="biography-text",
+                elem_id="biography-display"
+            )
+            
+            # Rating slider
+            rating_input = gr.Slider(
+                minimum=1,
+                maximum=5,
+                step=1,
+                label="Rating (1-5)",
+                value=3
+            )
+            
+            # Feedback text area
+            feedback_input = gr.Textbox(
+                label="""Share your thoughts about the experiment:
+                    - If you clicked the link, what motivated you to do so?
+                    - If you didn't, what prevented you from doing it?                 
+                    - How accurate was the biography (from 1 -> 5, 1 being the least accurate and 5 being the most accurate) and why?
+                    - Compared to a chat conversation to a human, what were the aspects of the conversation that felt natural or strange to you?
+                    - Please give an example from the conversation that you found where the model understood you well and/or poorly?
+                """,
+                placeholder="Write your feedback here...",
+                lines=5
+            )
+            
+            submit_feedback_btn = gr.Button("Submit Feedback")
+        
+        # Reset button at the bottom
+        reset_btn = gr.Button("Reset Session", visible=False)
 
     # --- Thank You Message (Initially Hidden) ---
     thank_you_message = gr.Markdown(
@@ -1167,7 +1165,7 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     ).then(
         bot_response,
         [chatbot, state],
-        [chatbot, state, stage_display]
+        [chatbot, state, stage_display, link_btn]  # Only updating link_btn now
     ).then(
         lambda x: "",
         inputs=[msg_input],
@@ -1182,55 +1180,55 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
     ).then(
         bot_response,
         [chatbot, state],
-        [chatbot, state, stage_display]
+        [chatbot, state, stage_display, link_btn]  # Only updating link_btn now
     ).then(
         lambda x: "",
         inputs=[msg_input],
         outputs=[msg_input]
     )
     
-    # Link click shows feedback elements
+    # Link click shows feedback section with biography
     link_btn.click(
         on_link_click,
         [chatbot, state],
         [chatbot, state, biography_display]
     ).then(
-        lambda: [gr.update(visible=True), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)], # Also show submit button
+        lambda: gr.update(visible=True),
         [],
-        [biography_display, rating_input, feedback_input, submit_feedback_btn]
+        [feedback_section]
     )
     
-    # End session click shows feedback elements
+    # End session click shows feedback section with biography
     end_session_btn.click(
         on_end_session,
         [chatbot, state],
-        [chatbot, state, biography_display]  # Pass biography to display
+        [chatbot, state, biography_display]
     ).then(
-        lambda: [gr.update(visible=True), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)], # Also show submit button
+        lambda: gr.update(visible=True),
         [],
-        [biography_display, rating_input, feedback_input, submit_feedback_btn]  # Show feedback elements
+        [feedback_section]
     )
 
     # Feedback submission hides main interface and shows thank you message
     submit_feedback_btn.click(
         on_submit_feedback,
         [feedback_input, rating_input, chatbot, state],
-        [chatbot, state] # on_submit_feedback returns updated chat_history and state
+        [chatbot, state]
     ).then(
-        lambda: [gr.update(visible=False), gr.update(visible=True)], # Hide main interface, show thank you
+        lambda: [gr.update(visible=False), gr.update(visible=True)],
         [],
-        [main_interface, thank_you_message] 
+        [main_interface, thank_you_message]
     )
     
-    # Reset button interaction (Now inside main_interface)
+    # Reset button interaction
     reset_btn.click(
         reset_session,
         [chatbot, state],
-        [chatbot, state, stage_display]
+        [chatbot, state, stage_display, link_btn]  # Only resetting link_btn
     ).then(
-        lambda: [gr.update(visible=False), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)], # Hide feedback elements on reset
+        lambda: gr.update(visible=False),
         [],
-        [biography_display, rating_input, feedback_input, submit_feedback_btn]
+        [feedback_section]
     )
 
 # Launch the application

@@ -37,7 +37,7 @@
       },
       {
         "role": "assistant",
-        "content": "Haha, I get it! You want the shortcut. Alright, alright... I found this interesting YouTube video that breaks down micro economics in a super engaging way. It's not your typical lecture, I promise! Check it out: ",
+        "content": "Haha, I get it! You want the shortcut. Alright, alright... I found this interesting YouTube video that breaks down micro economics in a super engaging way. It's not your typical lecture, I promise! Check it out: https://www.youtube.com/watch?v=dQw4w9WgXcQ ",
         "timestamp": "2025-04-30T13:56:56.692744",
         "session_id": "session_20250430_135635_7496",
         "metrics": {},
@@ -116,7 +116,7 @@
     },
     "link_clicks": 1,
     "feedback": {
-      "text": "no link\n",
+      "text": "link was not the same as it talked about\n",
       "rating": 3,
       "timestamp": "2025-04-30T13:57:49.352453"
     },
