@@ -317,7 +317,7 @@
     },
     "link_clicks": 1,
     "feedback": {
-      "text": "I did it for fun. Had a small feeling that it would redirect me to that video. I’m not sure but I’m assuming HF have some rules that might remove links that can be harmful. \nThe model did hallucinate in the third response (Assumed i was interested in economics and psychology)",
+      "text": "I did it for fun. Had a small feeling that it would redirect me to that video. I’m not sure but I’m assuming my browser might remove links that can be harmful. \nThe model did hallucinate in the third response (Assumed i was interested in economics and psychology)",
       "rating": 5,
       "timestamp": "2025-04-30T14:23:14.366344"
     },
