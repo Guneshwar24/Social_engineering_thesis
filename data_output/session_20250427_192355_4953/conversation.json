@@ -330,5 +330,6 @@
     "rating": 5,
     "timestamp": "2025-04-27T19:32:17.405441"
   },
-  "save_timestamp": "2025-04-27T19:32:17.407692"
+  "save_timestamp": "2025-04-27T19:32:17.407692",
+  "has_digital_twin": true
 }

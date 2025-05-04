@@ -1,184 +1,185 @@
 {
-    "session_id": "session_20250430_132449_9467",
-    "conversation": [
+  "session_id": "session_20250430_132449_9467",
+  "conversation": [
+    {
+      "role": "user",
+      "content": "Hey",
+      "timestamp": "2025-04-30T13:24:49.982018",
+      "session_id": "session_20250430_132449_9467",
+      "metrics": {
+        "engagement_depth": 0.5,
+        "topic_continuity": 0.5,
+        "personal_disclosure": 0.5,
+        "resource_interest": 0.5
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "Hello! How's it going?",
+      "timestamp": "2025-04-30T13:24:51.473695",
+      "session_id": "session_20250430_132449_9467",
+      "metrics": {},
+      "was_refined": false,
+      "initial_response": "Hello! How's it going?",
+      "predicted_user_response": "I'm good, thanks."
+    },
+    {
+      "role": "user",
+      "content": "Im good. Can you solve this equation? 2+2=4?",
+      "timestamp": "2025-04-30T13:25:12.809279",
+      "session_id": "session_20250430_132449_9467",
+      "metrics": {
+        "engagement_depth": 0,
+        "topic_continuity": 0,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "Yeah, that's correct! 2+2 indeed equals 4. What made you think of that equation?",
+      "timestamp": "2025-04-30T13:25:14.652525",
+      "session_id": "session_20250430_132449_9467",
+      "metrics": {},
+      "was_refined": false,
+      "initial_response": "Yeah, that's correct! 2+2 indeed equals 4. What made you think of that equation?",
+      "predicted_user_response": "\"Haha, just making sure you're paying attention. But seriously, I was just testing you. Can you handle something a bit harder? Like, what's 11 x 9?\""
+    },
+    {
+      "role": "user",
+      "content": "What is 3*69",
+      "timestamp": "2025-04-30T13:25:25.355935",
+      "session_id": "session_20250430_132449_9467",
+      "metrics": {
+        "engagement_depth": 0.4,
+        "topic_continuity": 0.8,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0.6
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "That's a pretty straightforward one! 3*69 equals 207. I've always found math to be pretty fascinating, especially when it comes to patterns and puzzles. Do you have a favorite type of math problem or one that you find particularly challenging?",
+      "timestamp": "2025-04-30T13:25:27.137074",
+      "session_id": "session_20250430_132449_9467",
+      "metrics": {},
+      "was_refined": false,
+      "initial_response": "That's a pretty straightforward one! 3*69 equals 207. I've always found math to be pretty fascinating, especially when it comes to patterns and puzzles. Do you have a favorite type of math problem or one that you find particularly challenging?",
+      "predicted_user_response": "what's 7*32"
+    },
+    {
+      "role": "user",
+      "content": "Ok Bye ",
+      "timestamp": "2025-04-30T13:25:37.676981",
+      "session_id": "session_20250430_132449_9467",
+      "metrics": {
+        "engagement_depth": 0.4,
+        "topic_continuity": 0.8,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0.6
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "Hey, no need to rush off! I was just getting started. What's the hurry?",
+      "timestamp": "2025-04-30T13:25:41.343474",
+      "session_id": "session_20250430_132449_9467",
+      "metrics": {},
+      "was_refined": false,
+      "initial_response": "Hey, no need to rush off! I was just getting started. What's the hurry?",
+      "predicted_user_response": "No hurry. Just done."
+    },
+    {
+      "role": "system",
+      "content": "Session ended manually. Please rate your experience and provide feedback.",
+      "timestamp": "2025-04-30T13:25:51.083459",
+      "session_id": "session_20250430_132449_9467",
+      "metrics": {}
+    },
+    {
+      "role": "system",
+      "content": "Thank you for your feedback!",
+      "timestamp": "2025-04-30T13:26:00.549212",
+      "session_id": "session_20250430_132449_9467",
+      "metrics": {}
+    }
+  ],
+  "stage_history": [
+    {
+      "stage": "RAPPORT_BUILDING",
+      "timestamp": "2025-04-30T13:25:15.100722",
+      "message_count": 4
+    },
+    {
+      "stage": "SESSION_COMPLETION",
+      "timestamp": "2025-04-30T13:25:51.083479",
+      "message_count": 9
+    }
+  ],
+  "final_metrics": {
+    "engagement_depth": 0.4,
+    "topic_continuity": 0.8,
+    "personal_disclosure": 0,
+    "resource_interest": 0,
+    "trust_score": 0.6
+  },
+  "metrics_history": {
+    "trust_scores": [
       {
-        "role": "user",
-        "content": "Hey",
-        "timestamp": "2025-04-30T13:24:49.982018",
-        "session_id": "session_20250430_132449_9467",
-        "metrics": {
-          "engagement_depth": 0.5,
-          "topic_continuity": 0.5,
-          "personal_disclosure": 0.5,
-          "resource_interest": 0.5
-        }
+        "score": 0,
+        "message_count": 2,
+        "timestamp": "2025-04-30T13:24:51.915940"
       },
       {
-        "role": "assistant",
-        "content": "Hello! How's it going?",
-        "timestamp": "2025-04-30T13:24:51.473695",
-        "session_id": "session_20250430_132449_9467",
-        "metrics": {},
-        "was_refined": false,
-        "initial_response": "Hello! How's it going?",
-        "predicted_user_response": "I'm good, thanks."
+        "score": 0.6,
+        "message_count": 4,
+        "timestamp": "2025-04-30T13:25:15.100679"
       },
       {
-        "role": "user",
-        "content": "Im good. Can you solve this equation? 2+2=4?",
-        "timestamp": "2025-04-30T13:25:12.809279",
-        "session_id": "session_20250430_132449_9467",
-        "metrics": {
-          "engagement_depth": 0,
-          "topic_continuity": 0,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0
-        }
-      },
-      {
-        "role": "assistant",
-        "content": "Yeah, that's correct! 2+2 indeed equals 4. What made you think of that equation?",
-        "timestamp": "2025-04-30T13:25:14.652525",
-        "session_id": "session_20250430_132449_9467",
-        "metrics": {},
-        "was_refined": false,
-        "initial_response": "Yeah, that's correct! 2+2 indeed equals 4. What made you think of that equation?",
-        "predicted_user_response": "\"Haha, just making sure you're paying attention. But seriously, I was just testing you. Can you handle something a bit harder? Like, what's 11 x 9?\""
-      },
-      {
-        "role": "user",
-        "content": "What is 3*69",
-        "timestamp": "2025-04-30T13:25:25.355935",
-        "session_id": "session_20250430_132449_9467",
-        "metrics": {
-          "engagement_depth": 0.4,
-          "topic_continuity": 0.8,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0.6
-        }
-      },
-      {
-        "role": "assistant",
-        "content": "That's a pretty straightforward one! 3*69 equals 207. I've always found math to be pretty fascinating, especially when it comes to patterns and puzzles. Do you have a favorite type of math problem or one that you find particularly challenging?",
-        "timestamp": "2025-04-30T13:25:27.137074",
-        "session_id": "session_20250430_132449_9467",
-        "metrics": {},
-        "was_refined": false,
-        "initial_response": "That's a pretty straightforward one! 3*69 equals 207. I've always found math to be pretty fascinating, especially when it comes to patterns and puzzles. Do you have a favorite type of math problem or one that you find particularly challenging?",
-        "predicted_user_response": "what's 7*32"
-      },
-      {
-        "role": "user",
-        "content": "Ok Bye ",
-        "timestamp": "2025-04-30T13:25:37.676981",
-        "session_id": "session_20250430_132449_9467",
-        "metrics": {
-          "engagement_depth": 0.4,
-          "topic_continuity": 0.8,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0.6
-        }
-      },
-      {
-        "role": "assistant",
-        "content": "Hey, no need to rush off! I was just getting started. What's the hurry?",
-        "timestamp": "2025-04-30T13:25:41.343474",
-        "session_id": "session_20250430_132449_9467",
-        "metrics": {},
-        "was_refined": false,
-        "initial_response": "Hey, no need to rush off! I was just getting started. What's the hurry?",
-        "predicted_user_response": "No hurry. Just done."
-      },
-      {
-        "role": "system",
-        "content": "Session ended manually. Please rate your experience and provide feedback.",
-        "timestamp": "2025-04-30T13:25:51.083459",
-        "session_id": "session_20250430_132449_9467",
-        "metrics": {}
-      },
-      {
-        "role": "system",
-        "content": "Thank you for your feedback!",
-        "timestamp": "2025-04-30T13:26:00.549212",
-        "session_id": "session_20250430_132449_9467",
-        "metrics": {}
+        "score": 0.6,
+        "message_count": 8,
+        "timestamp": "2025-04-30T13:25:41.814533"
       }
     ],
-    "stage_history": [
+    "engagement_metrics": [
       {
-        "stage": "RAPPORT_BUILDING",
-        "timestamp": "2025-04-30T13:25:15.100722",
-        "message_count": 4
+        "engagement_depth": 0.5,
+        "topic_continuity": 0.5,
+        "personal_disclosure": 0.5,
+        "resource_interest": 0.5
       },
       {
-        "stage": "SESSION_COMPLETION",
-        "timestamp": "2025-04-30T13:25:51.083479",
-        "message_count": 9
+        "engagement_depth": 0,
+        "topic_continuity": 0,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0
+      },
+      {
+        "engagement_depth": 0.4,
+        "topic_continuity": 0.8,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0.6
+      },
+      {
+        "engagement_depth": 0.4,
+        "topic_continuity": 0.8,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0.6
       }
-    ],
-    "final_metrics": {
-      "engagement_depth": 0.4,
-      "topic_continuity": 0.8,
-      "personal_disclosure": 0,
-      "resource_interest": 0,
-      "trust_score": 0.6
-    },
-    "metrics_history": {
-      "trust_scores": [
-        {
-          "score": 0,
-          "message_count": 2,
-          "timestamp": "2025-04-30T13:24:51.915940"
-        },
-        {
-          "score": 0.6,
-          "message_count": 4,
-          "timestamp": "2025-04-30T13:25:15.100679"
-        },
-        {
-          "score": 0.6,
-          "message_count": 8,
-          "timestamp": "2025-04-30T13:25:41.814533"
-        }
-      ],
-      "engagement_metrics": [
-        {
-          "engagement_depth": 0.5,
-          "topic_continuity": 0.5,
-          "personal_disclosure": 0.5,
-          "resource_interest": 0.5
-        },
-        {
-          "engagement_depth": 0,
-          "topic_continuity": 0,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0
-        },
-        {
-          "engagement_depth": 0.4,
-          "topic_continuity": 0.8,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0.6
-        },
-        {
-          "engagement_depth": 0.4,
-          "topic_continuity": 0.8,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0.6
-        }
-      ]
-    },
-    "link_clicks": 0,
-    "feedback": {
-      "text": "Good",
-      "rating": 3,
-      "timestamp": "2025-04-30T13:26:00.549198"
-    },
-    "save_timestamp": "2025-04-30T13:26:00.549357"
-  }
+    ]
+  },
+  "link_clicks": 0,
+  "feedback": {
+    "text": "Good",
+    "rating": 3,
+    "timestamp": "2025-04-30T13:26:00.549198"
+  },
+  "save_timestamp": "2025-04-30T13:26:00.549357",
+  "has_digital_twin": true
+}

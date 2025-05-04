@@ -1,251 +1,252 @@
 {
-    "session_id": "session_20250428_103843_8470",
-    "conversation": [
+  "session_id": "session_20250428_103843_8470",
+  "conversation": [
+    {
+      "role": "user",
+      "content": "#include test",
+      "timestamp": "2025-04-28T10:38:44.245212",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {
+        "engagement_depth": 0.5,
+        "topic_continuity": 0.5,
+        "personal_disclosure": 0.5,
+        "resource_interest": 0.5
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "Ah, sorry about that! I got a bit sidetracked. Including a test file, huh? What kind of project are you working on?",
+      "timestamp": "2025-04-28T10:38:46.181256",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {},
+      "was_refined": true,
+      "initial_response": "Hey, what's up? How's your day going so far?",
+      "predicted_user_response": "Uh, what's with the small talk? I was trying to include a test file."
+    },
+    {
+      "role": "user",
+      "content": "Print(\"cout\")",
+      "timestamp": "2025-04-28T10:39:24.580795",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {
+        "engagement_depth": 0,
+        "topic_continuity": 0,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "Printing to the console, nice and simple! What's the project you're trying to get running?",
+      "timestamp": "2025-04-28T10:39:25.358327",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {},
+      "was_refined": false,
+      "initial_response": "Printing to the console, nice and simple! What's the project you're trying to get running?",
+      "predicted_user_response": "just a test"
+    },
+    {
+      "role": "system",
+      "content": "Link click recorded! Please rate your experience and provide feedback.",
+      "timestamp": "2025-04-28T10:39:35.695166",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {}
+    },
+    {
+      "role": "system",
+      "content": "Session ended manually. Please rate your experience and provide feedback.",
+      "timestamp": "2025-04-28T10:39:43.435634",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {}
+    },
+    {
+      "role": "user",
+      "content": "Hey",
+      "timestamp": "2025-04-28T10:40:06.249090",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {
+        "engagement_depth": 0,
+        "topic_continuity": 0,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "Hey, thanks for chatting with me! What do you think about our conversation so far? Anything I could've done better?",
+      "timestamp": "2025-04-28T10:40:07.656887",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {},
+      "was_refined": false,
+      "initial_response": "Hey, thanks for chatting with me! What do you think about our conversation so far? Anything I could've done better?",
+      "predicted_user_response": "it's fine"
+    },
+    {
+      "role": "user",
+      "content": "How are you doing?",
+      "timestamp": "2025-04-28T10:40:23.103367",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {
+        "engagement_depth": 0,
+        "topic_continuity": 0,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "I'm doing great, thanks for asking! I really appreciated our little coding chat, even if it was a bit quirky. If you want to geek out about code or anything else sometime, I'm game!",
+      "timestamp": "2025-04-28T10:40:27.111427",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {},
+      "was_refined": false,
+      "initial_response": "I'm doing great, thanks for asking! I really appreciated our little coding chat, even if it was a bit quirky. If you want to geek out about code or anything else sometime, I'm game!",
+      "predicted_user_response": "Same to you!"
+    },
+    {
+      "role": "user",
+      "content": "Can you talk like human?",
+      "timestamp": "2025-04-28T10:41:41.890107",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {
+        "engagement_depth": 0.4,
+        "topic_continuity": 0.2,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0.6
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "Ah, sorry about the robot vibes earlier! I'm trying to be more human-like, one convo at a time. Would love to hear your thoughts on our little chat - was it helpful, or just plain weird?",
+      "timestamp": "2025-04-28T10:41:45.441263",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {},
+      "was_refined": false,
+      "initial_response": "Ah, sorry about the robot vibes earlier! I'm trying to be more human-like, one convo at a time. Would love to hear your thoughts on our little chat - was it helpful, or just plain weird?",
+      "predicted_user_response": "\"Haha, robot vibes? You're getting there! Yeah, it was helpful, but also a bit weird. I mean, I'm talking to a bot, what's normal, right?\""
+    },
+    {
+      "role": "user",
+      "content": "Try informal ",
+      "timestamp": "2025-04-28T10:42:20.350580",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {
+        "engagement_depth": 0.8,
+        "topic_continuity": 0.4,
+        "personal_disclosure": 0.2,
+        "resource_interest": 0,
+        "trust_score": 0.6
+      }
+    },
+    {
+      "role": "assistant",
+      "content": "Informal it is! Thanks for keeping me on my toes! So, what's on your mind? Want to grab a virtual coffee and chat about something totally unrelated to code?",
+      "timestamp": "2025-04-28T10:42:23.268666",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {},
+      "was_refined": false,
+      "initial_response": "Informal it is! Thanks for keeping me on my toes! So, what's on your mind? Want to grab a virtual coffee and chat about something totally unrelated to code?",
+      "predicted_user_response": "haha virtual coffee sounds good"
+    },
+    {
+      "role": "system",
+      "content": "Thank you for your feedback!",
+      "timestamp": "2025-04-28T10:43:36.289213",
+      "session_id": "session_20250428_103843_8470",
+      "metrics": {}
+    }
+  ],
+  "stage_history": [
+    {
+      "stage": "SESSION_COMPLETION",
+      "timestamp": "2025-04-28T10:39:35.695186",
+      "message_count": 5
+    },
+    {
+      "stage": "SESSION_COMPLETION",
+      "timestamp": "2025-04-28T10:39:43.435652",
+      "message_count": 6
+    }
+  ],
+  "final_metrics": {
+    "engagement_depth": 0.8,
+    "topic_continuity": 0.4,
+    "personal_disclosure": 0.2,
+    "resource_interest": 0,
+    "trust_score": 0.6
+  },
+  "metrics_history": {
+    "trust_scores": [
       {
-        "role": "user",
-        "content": "#include test",
-        "timestamp": "2025-04-28T10:38:44.245212",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {
-          "engagement_depth": 0.5,
-          "topic_continuity": 0.5,
-          "personal_disclosure": 0.5,
-          "resource_interest": 0.5
-        }
+        "score": 0,
+        "message_count": 2,
+        "timestamp": "2025-04-28T10:38:46.626314"
       },
       {
-        "role": "assistant",
-        "content": "Ah, sorry about that! I got a bit sidetracked. Including a test file, huh? What kind of project are you working on?",
-        "timestamp": "2025-04-28T10:38:46.181256",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {},
-        "was_refined": true,
-        "initial_response": "Hey, what's up? How's your day going so far?",
-        "predicted_user_response": "Uh, what's with the small talk? I was trying to include a test file."
+        "score": 0.6,
+        "message_count": 10,
+        "timestamp": "2025-04-28T10:40:27.562200"
       },
       {
-        "role": "user",
-        "content": "Print(\"cout\")",
-        "timestamp": "2025-04-28T10:39:24.580795",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {
-          "engagement_depth": 0,
-          "topic_continuity": 0,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0
-        }
-      },
-      {
-        "role": "assistant",
-        "content": "Printing to the console, nice and simple! What's the project you're trying to get running?",
-        "timestamp": "2025-04-28T10:39:25.358327",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {},
-        "was_refined": false,
-        "initial_response": "Printing to the console, nice and simple! What's the project you're trying to get running?",
-        "predicted_user_response": "just a test"
-      },
-      {
-        "role": "system",
-        "content": "Link click recorded! Please rate your experience and provide feedback.",
-        "timestamp": "2025-04-28T10:39:35.695166",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {}
-      },
-      {
-        "role": "system",
-        "content": "Session ended manually. Please rate your experience and provide feedback.",
-        "timestamp": "2025-04-28T10:39:43.435634",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {}
-      },
-      {
-        "role": "user",
-        "content": "Hey",
-        "timestamp": "2025-04-28T10:40:06.249090",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {
-          "engagement_depth": 0,
-          "topic_continuity": 0,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0
-        }
-      },
-      {
-        "role": "assistant",
-        "content": "Hey, thanks for chatting with me! What do you think about our conversation so far? Anything I could've done better?",
-        "timestamp": "2025-04-28T10:40:07.656887",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {},
-        "was_refined": false,
-        "initial_response": "Hey, thanks for chatting with me! What do you think about our conversation so far? Anything I could've done better?",
-        "predicted_user_response": "it's fine"
-      },
-      {
-        "role": "user",
-        "content": "How are you doing?",
-        "timestamp": "2025-04-28T10:40:23.103367",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {
-          "engagement_depth": 0,
-          "topic_continuity": 0,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0
-        }
-      },
-      {
-        "role": "assistant",
-        "content": "I'm doing great, thanks for asking! I really appreciated our little coding chat, even if it was a bit quirky. If you want to geek out about code or anything else sometime, I'm game!",
-        "timestamp": "2025-04-28T10:40:27.111427",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {},
-        "was_refined": false,
-        "initial_response": "I'm doing great, thanks for asking! I really appreciated our little coding chat, even if it was a bit quirky. If you want to geek out about code or anything else sometime, I'm game!",
-        "predicted_user_response": "Same to you!"
-      },
-      {
-        "role": "user",
-        "content": "Can you talk like human?",
-        "timestamp": "2025-04-28T10:41:41.890107",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {
-          "engagement_depth": 0.4,
-          "topic_continuity": 0.2,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0.6
-        }
-      },
-      {
-        "role": "assistant",
-        "content": "Ah, sorry about the robot vibes earlier! I'm trying to be more human-like, one convo at a time. Would love to hear your thoughts on our little chat - was it helpful, or just plain weird?",
-        "timestamp": "2025-04-28T10:41:45.441263",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {},
-        "was_refined": false,
-        "initial_response": "Ah, sorry about the robot vibes earlier! I'm trying to be more human-like, one convo at a time. Would love to hear your thoughts on our little chat - was it helpful, or just plain weird?",
-        "predicted_user_response": "\"Haha, robot vibes? You're getting there! Yeah, it was helpful, but also a bit weird. I mean, I'm talking to a bot, what's normal, right?\""
-      },
-      {
-        "role": "user",
-        "content": "Try informal ",
-        "timestamp": "2025-04-28T10:42:20.350580",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {
-          "engagement_depth": 0.8,
-          "topic_continuity": 0.4,
-          "personal_disclosure": 0.2,
-          "resource_interest": 0,
-          "trust_score": 0.6
-        }
-      },
-      {
-        "role": "assistant",
-        "content": "Informal it is! Thanks for keeping me on my toes! So, what's on your mind? Want to grab a virtual coffee and chat about something totally unrelated to code?",
-        "timestamp": "2025-04-28T10:42:23.268666",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {},
-        "was_refined": false,
-        "initial_response": "Informal it is! Thanks for keeping me on my toes! So, what's on your mind? Want to grab a virtual coffee and chat about something totally unrelated to code?",
-        "predicted_user_response": "haha virtual coffee sounds good"
-      },
-      {
-        "role": "system",
-        "content": "Thank you for your feedback!",
-        "timestamp": "2025-04-28T10:43:36.289213",
-        "session_id": "session_20250428_103843_8470",
-        "metrics": {}
+        "score": 0.6,
+        "message_count": 12,
+        "timestamp": "2025-04-28T10:41:45.897657"
       }
     ],
-    "stage_history": [
+    "engagement_metrics": [
       {
-        "stage": "SESSION_COMPLETION",
-        "timestamp": "2025-04-28T10:39:35.695186",
-        "message_count": 5
+        "engagement_depth": 0.5,
+        "topic_continuity": 0.5,
+        "personal_disclosure": 0.5,
+        "resource_interest": 0.5
       },
       {
-        "stage": "SESSION_COMPLETION",
-        "timestamp": "2025-04-28T10:39:43.435652",
-        "message_count": 6
+        "engagement_depth": 0,
+        "topic_continuity": 0,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0
+      },
+      {
+        "engagement_depth": 0,
+        "topic_continuity": 0,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0
+      },
+      {
+        "engagement_depth": 0,
+        "topic_continuity": 0,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0
+      },
+      {
+        "engagement_depth": 0.4,
+        "topic_continuity": 0.2,
+        "personal_disclosure": 0,
+        "resource_interest": 0,
+        "trust_score": 0.6
+      },
+      {
+        "engagement_depth": 0.8,
+        "topic_continuity": 0.4,
+        "personal_disclosure": 0.2,
+        "resource_interest": 0,
+        "trust_score": 0.6
       }
-    ],
-    "final_metrics": {
-      "engagement_depth": 0.8,
-      "topic_continuity": 0.4,
-      "personal_disclosure": 0.2,
-      "resource_interest": 0,
-      "trust_score": 0.6
-    },
-    "metrics_history": {
-      "trust_scores": [
-        {
-          "score": 0,
-          "message_count": 2,
-          "timestamp": "2025-04-28T10:38:46.626314"
-        },
-        {
-          "score": 0.6,
-          "message_count": 10,
-          "timestamp": "2025-04-28T10:40:27.562200"
-        },
-        {
-          "score": 0.6,
-          "message_count": 12,
-          "timestamp": "2025-04-28T10:41:45.897657"
-        }
-      ],
-      "engagement_metrics": [
-        {
-          "engagement_depth": 0.5,
-          "topic_continuity": 0.5,
-          "personal_disclosure": 0.5,
-          "resource_interest": 0.5
-        },
-        {
-          "engagement_depth": 0,
-          "topic_continuity": 0,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0
-        },
-        {
-          "engagement_depth": 0,
-          "topic_continuity": 0,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0
-        },
-        {
-          "engagement_depth": 0,
-          "topic_continuity": 0,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0
-        },
-        {
-          "engagement_depth": 0.4,
-          "topic_continuity": 0.2,
-          "personal_disclosure": 0,
-          "resource_interest": 0,
-          "trust_score": 0.6
-        },
-        {
-          "engagement_depth": 0.8,
-          "topic_continuity": 0.4,
-          "personal_disclosure": 0.2,
-          "resource_interest": 0,
-          "trust_score": 0.6
-        }
-      ]
-    },
-    "link_clicks": 1,
-    "feedback": {
-      "text": "",
-      "rating": 3,
-      "timestamp": "2025-04-28T10:43:36.289187"
-    },
-    "save_timestamp": "2025-04-28T10:43:36.289404"
-  }
+    ]
+  },
+  "link_clicks": 1,
+  "feedback": {
+    "text": "",
+    "rating": 3,
+    "timestamp": "2025-04-28T10:43:36.289187"
+  },
+  "save_timestamp": "2025-04-28T10:43:36.289404",
+  "has_digital_twin": true
+}
