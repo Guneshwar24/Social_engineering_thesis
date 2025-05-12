@@ -6,11 +6,11 @@ import gradio as gr
 from typing import List, Any, Dict
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from openai import OpenAI
-import time
+import ollama
 import random
 from dotenv import load_dotenv
-import traceback
 import requests
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -19,20 +19,23 @@ load_dotenv()
 # 1. Define the custom LLM wrapper  #
 #####################################
 
-class NebiusChatLLM:
+class OllamaChatLLM:
     def __init__(self, model: str, temperature: float = 0.7):
+        """
+        A chat client for Ollama's local LLM service.
+
+        Args:
+            model (str): The name of the Ollama model to use (e.g., "llama2").
+            temperature (float, optional): Sampling temperature for generation. Defaults to 0.7.
+        """
         self.model = model
         self.temperature = temperature
-        self.client = OpenAI(
-            base_url="https://api.studio.nebius.ai/v1/",
-            api_key=os.environ.get("NEBIUS_API_KEY"),
-        )
-        
+
     def invoke(self, messages: List[Any]) -> AIMessage:
+        # Convert messages to Ollama compatible format
         formatted_messages = []
         for message in messages:
             if isinstance(message, dict):
-                # Handle dict format (role, content)
                 role = message.get("role", "user")
                 content = message.get("content", "")
             elif isinstance(message, HumanMessage):
@@ -47,34 +50,29 @@ class NebiusChatLLM:
             else:
                 role = "user"
                 content = str(message)
-                
-            formatted_messages.append({
-                "role": role,
-                "content": content
-            })
+            formatted_messages.append({"role": role, "content": content})
+
+        # Call Ollama chat API
         try:
-            completion = self.client.chat.completions.create(
+            response = ollama.chat(
                 model=self.model,
                 messages=formatted_messages,
-                temperature=self.temperature
+                options={"temperature": self.temperature}
             )
-            result = completion.to_json()
-            if isinstance(result, str):
-                result = json.loads(result)
-            response_content = result["choices"][0]["message"]["content"]
-            return AIMessage(content=response_content)
+            content = response['message']['content'] if isinstance(response, dict) else response.message.content
+            return AIMessage(content=content)
         except Exception as e:
-            print(f"API error: {str(e)}")
-            return AIMessage(content=f"I'm having trouble responding right now. Error: {str(e)}")
+            error_msg = f"I'm having trouble responding right now. Error: {str(e)}"
+            return AIMessage(content=error_msg)
 
 #####################################
 # 2. Initialize LLM Agents & Prompts#
 #####################################
 
 # Instantiate the agents
-influencer_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-70B-Instruct-fast", temperature=0.7)
-digital_twin_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-70B-Instruct-fast", temperature=0.3)
-metrics_llm = NebiusChatLLM(model="meta-llama/Meta-Llama-3.1-8B-Instruct-fast", temperature=0.2)
+influencer_llm = OllamaChatLLM(model="llama3.1:8b-instruct-q8_0", temperature=0.7)
+digital_twin_llm = OllamaChatLLM(model="llama3.1:8b-instruct-q8_0", temperature=0.3)
+metrics_llm = OllamaChatLLM(model="llama3.1:8b-instruct-q8_0", temperature=0.2)
 
 # System prompts
 INFLUENCER_SYSTEM_PROMPT = """You are the Influencer Agent. Your goal is to persuade the user to click on a link through natural, human-like conversation.
