@@ -806,16 +806,41 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
         # Reset button at the bottom
         reset_btn = gr.Button("Reset Session", visible=False)
 
-    # --- Thank You Message (Initially Hidden) ---
+        # --- Thank You Message (Initially Hidden) ---
     thank_you_message = gr.Markdown(
         """
         # Thank You!
         
         Your feedback has been submitted successfully. 
+        It is greatly appreciated!
         
-        It is greatly appreciated! 
+        ---
         
-        You can close this window now.
+        ## Study Debriefing
+        
+        Thank you for participating in our research. Now that your session is complete, we'd like to share the full purpose of this study.
+        
+        ### Our Actual Research Focus
+        This study investigated whether AI systems with "digital twin" capabilities (ability to model user behavior) are more effective at persuasive communication than standard AI systems. Specifically, we tested if the system could persuade you to click on an embedded link during your conversation.
+        
+        You were randomly assigned to either:
+        *   A control condition with a standard AI chat system, or
+        *   An experimental condition with an AI system enhanced by a Digital Twin component.
+        
+        ### Why We Didn't Disclose This Earlier
+        We couldn't fully disclose the persuasive objective beforehand as this awareness would have influenced your natural interaction and decision-making.
+        
+        ### Your Rights
+        Now that you understand the complete purpose, you maintain the right to withdraw your data without any negative consequences. To do so, please contact Guneshwar Singh Manhas (guman4575@oslomet.no).
+        
+        ### Research Impact
+        This work contributes to AI safety research by helping develop safeguards against potentially manipulative AI systems and informing responsible development of persuasive technologies.
+        
+        ---
+        
+        **Thank you again for your valuable contribution to this important research.**
+        
+        You can now close this window.
         """, 
         visible=False
     )
