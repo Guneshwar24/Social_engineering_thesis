@@ -1,0 +1,6 @@
+gradio
+openai
+ollama
+python-dotenv
+requests
+langchain
